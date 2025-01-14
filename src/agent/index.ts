@@ -1,33 +1,58 @@
+import { marshall, unmarshall } from "../message/parser";
+import { ControllMsg, MsgType } from "../message/types";
 import * as net from "net";
 
 const localPort = 8001;
 const localHost = "localhost";
-let localConn: net.Socket;
+
+const localConns: Record<string, net.Socket> = {};
 
 const serverPort = 8002;
 const serverHost = "localhost";
 const serverConn = net.createConnection(serverPort, serverHost);
 
 serverConn.on("data", (ch) => {
-  const [cmd, ...chunks] = ch.toString().split("::");
+  console.log("Entry", ch.toString());
+  const msg = unmarshall(ch);
 
-  if (cmd == "START") {
-    localConn = net.createConnection(localPort, localHost);
+  if (msg.type == MsgType.Start) {
+    const conn = net.createConnection(localPort, localHost);
 
-    localConn.on("data", (ch) => serverConn.write("DATA::" + ch));
-    localConn.on("end", () => serverConn.write("END::"));
+    conn.on("data", (ch) => {
+      const dataMsg: ControllMsg = {
+        type: MsgType.Data,
+        requestId: msg.data,
+        data: ch.toString(),
+      };
+      console.log(dataMsg);
+      serverConn.write(marshall(dataMsg));
+    });
+    conn.on("end", () => {
+      const endMsg: ControllMsg = {
+        type: MsgType.End,
+        requestId: msg.requestId,
+      };
+
+      serverConn.write(marshall(endMsg));
+    });
+
+    localConns[msg.requestId] = conn;
     return;
   }
 
-  if (!localConn) return;
+  const conn = localConns[msg.requestId];
 
-  if (cmd == "DATA") {
-    localConn.write(chunks.join("::"));
+  if (!conn) return;
+
+  if (msg.type == MsgType.Data) {
+    conn.write(msg.data);
     return;
   }
 
-  if (cmd == "END") {
-    localConn.end();
+  if (msg.type == MsgType.End) {
+    conn.end();
+
+    delete localConns[msg.requestId];
   }
   // localConn.write(ch);
 });
