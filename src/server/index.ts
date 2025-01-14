@@ -1,58 +1,43 @@
 import * as net from "net";
 import * as random from "../utils/random";
-import {
-  ControllMsg,
-  makeDataMsg,
-  makeEndMsg,
-  makeStartMsg,
-  MsgType,
-} from "../message/types";
-import { marshall, unmarshall } from "../message/parser";
+import { MsgType } from "../message/types";
+import ControllChannel from "../channel/controllChannel";
 
-const agents: Record<string, net.Socket> = {};
+const controllChannels: Record<string, ControllChannel> = {};
 const clients: Record<string, net.Socket> = {};
 
 const key = "a";
 
 const server = net.createServer((client) => {
   const requestId = random.shortString();
-  const agent = agents[key];
+  const ctrlChannel = controllChannels[key];
   clients[requestId] = client;
 
-  const startMsg = makeStartMsg(requestId);
-  const flushed = agent.write(marshall(startMsg));
-  console.log(requestId, "started", startMsg, flushed);
+  ctrlChannel.sendStartMsg(requestId);
 
   client.on("data", (ch) => {
-    const dataMsg = makeDataMsg(requestId, ch);
-    const flushed = agent.write(marshall(dataMsg));
-    console.log(requestId, "requestData", dataMsg, flushed);
+    ctrlChannel.sendDataMsg(requestId, ch.toString());
   });
 
   client.on("end", () => {
-    const endMsg = makeEndMsg(requestId);
-    const flushed = agent.write(marshall(endMsg));
-    console.log(requestId, "ended", endMsg, flushed);
+    ctrlChannel.sendEndMsg(requestId);
   });
 });
 
 const agentServer = net.createServer((agent) => {
-  agents[key] = agent;
+  const ctrlChannel = new ControllChannel(agent);
+  controllChannels[key] = ctrlChannel;
 
-  agent.on("connect", () => console.log("agent connected"));
-  agent.on("end", () => console.log("agent disconnected"));
-  agent.on("data", (ch) => {
-    const msg = unmarshall(ch);
-    console.log("message from agent", msg);
-    const client = clients[msg.requestId];
+  ctrlChannel.on("ctrlMsg", (ctrlMsg) => {
+    const client = clients[ctrlMsg.requestId];
 
-    if (msg.type == MsgType.Data) {
-      client.write(msg.data);
+    if (ctrlMsg.type == MsgType.Data) {
+      client.write(ctrlMsg.data!);
     }
 
-    if (msg.type == MsgType.End) {
+    if (ctrlMsg.type == MsgType.End) {
       client.end();
-      delete clients[msg.requestId];
+      delete clients[ctrlMsg.requestId];
     }
   });
 });

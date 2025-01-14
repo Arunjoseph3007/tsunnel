@@ -65,6 +65,6 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   public sendDataMsg(requestId: string, data: string) {
-    this.sendCtrlMsg({ requestId, data, type: MsgType.End });
+    this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
   }
 }
