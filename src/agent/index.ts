@@ -1,5 +1,4 @@
 import ControllChannel from "../channel/controllChannel";
-import { MsgType } from "../message/types";
 import * as net from "net";
 
 const localPort = 8001;
@@ -11,32 +10,31 @@ const serverPort = 8002;
 const serverHost = "localhost";
 const ctrlChannel = ControllChannel.createChannel(serverPort, serverHost);
 
-ctrlChannel.on("ctrlMsg", (ctrlMsg) => {
-  if (ctrlMsg.type == MsgType.Start) {
-    const conn = net.createConnection(localPort, localHost);
+ctrlChannel.on("connStart", (requestId) => {
+  const conn = net.createConnection(localPort, localHost);
 
-    conn.on("data", (ch) => {
-      ctrlChannel.sendDataMsg(ctrlMsg.requestId, ch.toString());
-    });
+  conn.on("data", (ch) => {
+    ctrlChannel.sendDataMsg(requestId, ch.toString());
+  });
 
-    conn.on("end", () => {
-      ctrlChannel.sendEndMsg(ctrlMsg.requestId);
-    });
+  conn.on("end", () => {
+    ctrlChannel.sendEndMsg(requestId);
+  });
 
-    localConns[ctrlMsg.requestId] = conn;
-    return;
-  }
+  localConns[requestId] = conn;
+});
 
-  const conn = localConns[ctrlMsg.requestId];
-
+ctrlChannel.on("connEnd", (requestId) => {
+  const conn = localConns[requestId];
   if (!conn) return;
 
-  if (ctrlMsg.type == MsgType.Data) {
-    conn.write(ctrlMsg.data!);
-  }
+  conn.end();
+  delete localConns[requestId];
+});
 
-  if (ctrlMsg.type == MsgType.End) {
-    conn.end();
-    delete localConns[ctrlMsg.requestId];
-  }
+ctrlChannel.on("connData", (requestId, data) => {
+  const conn = localConns[requestId];
+  if (!conn) return;
+
+  conn.write(data);
 });

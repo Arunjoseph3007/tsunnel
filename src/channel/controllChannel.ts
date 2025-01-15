@@ -10,6 +10,9 @@ const DELIMITER = "|__|";
 
 type ControllChannelEvents = {
   ctrlMsg: [ctrlMsg: ControllMsg];
+  connStart: [requestId: string];
+  connEnd: [requestId: string];
+  connData: [requestId: string, data: string];
 };
 
 /**
@@ -47,6 +50,16 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
       const msgString = fragments.shift()!;
       const ctrlMsg = unmarshall(Buffer.from(msgString));
       this.emit("ctrlMsg", ctrlMsg);
+
+      if (ctrlMsg.type == MsgType.Start) {
+        this.emit("connStart", ctrlMsg.requestId);
+      }
+      if (ctrlMsg.type == MsgType.End) {
+        this.emit("connEnd", ctrlMsg.requestId);
+      }
+      if (ctrlMsg.type == MsgType.Data) {
+        this.emit("connData", ctrlMsg.requestId, ctrlMsg.data);
+      }
     }
 
     this.buffer = fragments[0];
