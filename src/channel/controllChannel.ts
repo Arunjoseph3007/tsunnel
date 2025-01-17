@@ -13,6 +13,7 @@ type ControllChannelEvents = {
   connStart: [requestId: string];
   connEnd: [requestId: string];
   connData: [requestId: string, data: string];
+  connMetaData: [requestId: string, data: string];
 };
 
 /**
@@ -60,6 +61,9 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
       if (ctrlMsg.type == MsgType.Data) {
         this.emit("connData", ctrlMsg.requestId, ctrlMsg.data);
       }
+      if (ctrlMsg.type == MsgType.Metadata) {
+        this.emit("connMetaData", ctrlMsg.requestId, ctrlMsg.data);
+      }
     }
 
     this.buffer = fragments[0];
@@ -79,5 +83,9 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
 
   public sendDataMsg(requestId: string, data: string) {
     this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
+  }
+
+  public sendMetaDataMsg(requestId: string, data: string) {
+    this.sendCtrlMsg({ requestId, data, type: MsgType.Metadata });
   }
 }

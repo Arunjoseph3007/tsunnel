@@ -1,13 +1,22 @@
+import { IncomingHttpHeaders } from "http";
+
 export enum MsgType {
   Start = "Start",
   Data = "Data",
   End = "End",
+  Metadata = "Metadata",
 }
 
 export type ControllMsg = {
   type: MsgType;
   requestId: string;
   data?: string;
+};
+
+export type HTTPMetadata = {
+  url: string;
+  method: string;
+  headers: IncomingHttpHeaders;
 };
 
 export const makeStartMsg = (requestId: string): ControllMsg => {
@@ -31,6 +40,17 @@ export const makeDataMsg = (
   return {
     type: MsgType.Data,
     requestId,
+    data: data.toString(),
+  };
+};
+
+export const makeMetaDataMsg = (
+  requestId: string,
+  data: Buffer<ArrayBufferLike>
+): ControllMsg => {
+  return {
+    requestId,
+    type: MsgType.Metadata,
     data: data.toString(),
   };
 };
