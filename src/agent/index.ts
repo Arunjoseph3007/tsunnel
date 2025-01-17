@@ -1,7 +1,7 @@
 import ControllChannel from "../channel/controllChannel";
 import * as net from "net";
 
-const localPort = 8001;
+const localPort = parseInt(process.argv[2]);
 const localHost = "localhost";
 
 const localConns: Record<string, net.Socket> = {};

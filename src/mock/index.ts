@@ -1,5 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "http";
 
+const PORT = parseInt(process.argv[2]);
+
 const echo = (
   res: ServerResponse<IncomingMessage>,
   key: string,
@@ -18,4 +20,6 @@ const server = createServer((req, res) => {
 });
 server.on("error", (er) => console.log(er));
 
-server.listen(8001, () => console.log("mock server running at 8001"));
+server.listen(PORT, () =>
+  console.log("mock server running at", server.address())
+);
