@@ -1,6 +1,6 @@
 import * as net from "net";
 import * as random from "../utils/random";
-import ControllChannel from "../channel/tcp.channel";
+import ControllChannel from "../channel/controllChannel";
 
 export default class TCPTunnel {
   server: net.Server;

@@ -1,5 +1,5 @@
 import * as net from "net";
-import ControllChannel from "../channel/tcp.channel";
+import ControllChannel from "../channel/controllChannel";
 
 export default class TCPAgent {
   remotePort: number;
