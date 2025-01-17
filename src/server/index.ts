@@ -1,37 +1,54 @@
 import * as net from "net";
 import TCPTunnel from "../tunnels/tcpTunnel";
 
-const portMap = new Map<number, TCPTunnel>();
+export default class TCPServer {
+  private portMap: Map<number, TCPTunnel>;
+  private agentServer: net.Server;
+  port: number;
 
-const nextPort = (): number => {
-  for (let i = 2000; i < 65535; i++) {
-    if (!portMap.has(i)) {
-      return i;
-    }
+  constructor(port: number) {
+    this.port = port;
+    this.portMap = new Map();
+    this.agentServer = net.createServer((agent) => {
+      this.handleAgent(agent);
+    });
   }
-  throw new Error("Sorry, All Ports are allocated");
-};
 
-const agentServer = net.createServer((agent) => {
-  const listenPort = nextPort();
-  const clientServer = new TCPTunnel(agent, listenPort);
-  portMap.set(listenPort, clientServer);
-  clientServer.startListening();
+  private nextPort(): number {
+    for (let i = 2000; i < 65535; i++) {
+      if (!this.portMap.has(i)) {
+        return i;
+      }
+    }
+    throw new Error("Sorry, All Ports are allocated");
+  }
 
-  agent.on("error", () => {
-    clientServer.shutdown();
-    portMap.delete(listenPort);
-  });
-  agent.on("end", () => {
-    clientServer.shutdown();
-    portMap.delete(listenPort);
-  });
-  agent.on("close", () => {
-    clientServer.shutdown();
-    portMap.delete(listenPort);
-  });
-});
+  private handleAgent(agent: net.Socket) {
+    const listenPort = this.nextPort();
+    const clientServer = new TCPTunnel(agent, listenPort);
+    this.portMap.set(listenPort, clientServer);
+    clientServer.startListening();
 
-agentServer.listen(8002, () => {
-  console.log("agent server started on", agentServer.address());
-});
+    agent.on("error", () => {
+      clientServer.shutdown();
+      this.portMap.delete(listenPort);
+    });
+    agent.on("end", () => {
+      clientServer.shutdown();
+      this.portMap.delete(listenPort);
+    });
+    agent.on("close", () => {
+      clientServer.shutdown();
+      this.portMap.delete(listenPort);
+    });
+  }
+
+  public startListening() {
+    this.agentServer.listen(this.port, () => {
+      console.log("Agent server started at", this.port);
+    });
+  }
+}
+
+const tcpServer = new TCPServer(8000);
+tcpServer.startListening();
