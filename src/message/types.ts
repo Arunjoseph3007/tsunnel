@@ -13,9 +13,14 @@ export type ControllMsg = {
   data?: string;
 };
 
-export type HTTPMetadata = {
+export type HTTPReqMetadata = {
   url: string;
   method: string;
+  headers: IncomingHttpHeaders;
+};
+
+export type HTTPResMetadata = {
+  statusCode: number;
   headers: IncomingHttpHeaders;
 };
 

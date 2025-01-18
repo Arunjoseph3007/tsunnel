@@ -9,7 +9,7 @@ A local tunnel written in Typescript
 
 ## TODO
 
-- [ ] Similar Tunnel for HTTP protocol
+- [X] ~~Similar Tunnel for HTTP protocol~~
 - [ ] A clean and accesible CLI
 - [ ] Nice logging for served requests
 - [ ] Smarter Delimiting & Escaping for control channel

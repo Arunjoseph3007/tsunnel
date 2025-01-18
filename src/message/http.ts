@@ -1,4 +1,4 @@
-import { HTTPMetadata } from "./types";
+import { HTTPReqMetadata, HTTPResMetadata } from "./types";
 import { IncomingMessage } from "http";
 
 export const marshallReqHeaders = (req: IncomingMessage): string => {
@@ -9,6 +9,17 @@ export const marshallReqHeaders = (req: IncomingMessage): string => {
   });
 };
 
-export const unmarshallReqHeaders = (data: string): HTTPMetadata => {
+export const unmarshallReqHeaders = (data: string): HTTPReqMetadata => {
+  return JSON.parse(data);
+};
+
+export const marshallRespHeaders = (res: IncomingMessage): string => {
+  return JSON.stringify({
+    statusCode: res.statusCode,
+    headers: res.headers,
+  });
+};
+
+export const unmarshallRespHeaders = (data: string): HTTPResMetadata => {
   return JSON.parse(data);
 };

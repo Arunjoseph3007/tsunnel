@@ -28,6 +28,7 @@ export default class TCPServer {
     const clientServer = new TCPTunnel(agent, listenPort);
     this.portMap.set(listenPort, clientServer);
     clientServer.startListening();
+    console.log("New Agent registerd at Port:", listenPort);
 
     agent.on("error", () => {
       clientServer.shutdown();
