@@ -4,14 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build-server": "esbuild src/server/index.ts --bundle --platform=node --outfile=dist/server.js",
-    "build-agent": "esbuild src/agent/index.ts --bundle --platform=node --outfile=dist/agent.js",
-    "build-mock": "esbuild src/mock/index.ts --bundle --platform=node --outfile=dist/mock.js",
-    "build-all": "npm run build-server && npm run build-agent && npm run build-mock",
-    "build": "npm run build-server && npm run build-agent",
-    "server": "node dist/server.js",
-    "agent": "node dist/agent.js",
-    "mock": "node dist/mock.js"
+    "build-server": "esbuild src/server/index.ts --bundle --platform=node --outfile=dist/server.index.js",
+    "build-agent": "esbuild src/agent/index.ts --bundle --platform=node --outfile=dist/agent.index.js",
+    "build-mock": "esbuild src/mock/index.ts --bundle --platform=node --outfile=dist/mock.index.js",
+    "build": "node esbuild.js",
+    "server": "node dist/server/index.js",
+    "agent": "node dist/agent/index.js",
+    "mock": "node dist/mock/index.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
