@@ -3,6 +3,8 @@ import * as random from "../utils/random";
 import ControllChannel from "../channel/controllChannel";
 import { StatusMsgType } from "../message/types";
 
+const logPrefix = "[TCP]";
+
 export default class TCPTunnel {
   server: net.Server;
   listenPort: number;
@@ -28,7 +30,7 @@ export default class TCPTunnel {
 
     this.ctrlChannel.on("connData", (requestId, data) => {
       if (!this.clients.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.clients.get(requestId)!.write(data);
@@ -36,7 +38,7 @@ export default class TCPTunnel {
 
     this.ctrlChannel.on("connEnd", (requestId) => {
       if (!this.clients.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.clients.get(requestId)!.end();
@@ -45,7 +47,7 @@ export default class TCPTunnel {
 
     this.ctrlChannel.on("connError", (requestId, errMsg) => {
       if (!this.clients.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.clients.get(requestId)!.end();
@@ -70,11 +72,12 @@ export default class TCPTunnel {
 
   public startListening() {
     this.server.listen(this.listenPort, () => {
-      console.log("Client server started at port:", this.listenPort);
+      console.log(logPrefix, "Client server started at port:", this.listenPort);
     });
   }
 
   public shutdown() {
+    console.log(logPrefix, "Shutting down agent at", this.listenPort);
     this.server.close();
   }
 }

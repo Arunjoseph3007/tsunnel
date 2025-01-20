@@ -1,6 +1,8 @@
 import * as net from "net";
 import TCPTunnel from "../tunnels/tcp.tunnel";
 
+const logPrefix = "[TCP]";
+
 export default class TCPServer {
   private portMap: Map<number, TCPTunnel>;
   private agentServer: net.Server;
@@ -28,14 +30,9 @@ export default class TCPServer {
     const clientServer = new TCPTunnel(agent, listenPort);
     this.portMap.set(listenPort, clientServer);
     clientServer.startListening();
-    console.log("New Agent registerd at Port:", listenPort);
+    console.log(logPrefix, "New Agent registerd at Port:", listenPort);
 
     agent.on("error", () => {
-      clientServer.shutdown();
-      this.portMap.delete(listenPort);
-    });
-    agent.on("end", () => {
-      clientServer.shutdown();
       this.portMap.delete(listenPort);
     });
     agent.on("close", () => {
@@ -46,7 +43,7 @@ export default class TCPServer {
 
   public startListening() {
     this.agentServer.listen(this.port, () => {
-      console.log("Agent server started at", this.port);
+      console.log(logPrefix, "Agent server started at", this.port);
     });
   }
 }

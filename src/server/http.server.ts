@@ -3,6 +3,8 @@ import * as http from "http";
 import * as random from "../utils/random";
 import HTTPTunnel from "../tunnels/http.tunnel";
 
+const logPrefix = "[HTTP]";
+
 type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
 };
@@ -48,7 +50,7 @@ export default class HTTPServer {
     // This might need to be changed to secureString (UUID)
     const agentID = random.shortString();
 
-    console.log("New Agent registered with ID:", agentID);
+    console.log(logPrefix, "New Agent registered with ID:", agentID);
 
     const clientTunnel = new HTTPTunnel(agent, agentID);
     this.agentMap.set(agentID, clientTunnel);
@@ -56,21 +58,19 @@ export default class HTTPServer {
     agent.on("error", () => {
       this.agentMap.delete(agentID);
     });
-    agent.on("end", () => {
-      this.agentMap.delete(agentID);
-    });
     agent.on("close", () => {
+      clientTunnel.shutdown();
       this.agentMap.delete(agentID);
     });
   }
 
   public startListening() {
     this.agentServer.listen(this.agentServerPort, () => {
-      console.log("Agent server started at", this.agentServerPort);
+      console.log(logPrefix, "Agent server started at", this.agentServerPort);
     });
 
     this.clientServer.listen(this.clientServerPort, () => {
-      console.log("Client server started at", this.clientServerPort);
+      console.log(logPrefix, "Client server started at", this.clientServerPort);
     });
   }
 }

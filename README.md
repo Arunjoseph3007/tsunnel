@@ -14,3 +14,4 @@ A local tunnel written in Typescript
 - [ ] Nice logging for served requests
 - [ ] Smarter Delimiting & Escaping for control channel
 - [ ] In control channel instead of storing in string use `Buffers`
+- [ ] Better logging using pino and pino-pretty

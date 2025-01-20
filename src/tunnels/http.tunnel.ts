@@ -5,6 +5,8 @@ import ControllChannel from "../channel/controllChannel";
 import { marshallReqHeaders, unmarshallRespHeaders } from "../message/http";
 import { StatusMsgType } from "../message/types";
 
+const logPrefix = "[HTTP]";
+
 type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
 };
@@ -44,7 +46,7 @@ export default class HTTPTunnel {
 
     this.ctrlChannel.on("connMetaData", (requestId, data) => {
       if (!this.responses.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
 
@@ -65,7 +67,7 @@ export default class HTTPTunnel {
 
     this.ctrlChannel.on("connEnd", (requestId) => {
       if (!this.responses.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.responses.get(requestId)!.end();
@@ -74,12 +76,16 @@ export default class HTTPTunnel {
 
     this.ctrlChannel.on("connError", (requestId, errMsg) => {
       if (!this.responses.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.responses.get(requestId)!.statusCode = 500;
       this.responses.get(requestId)!.write(errMsg);
       this.responses.delete(requestId);
     });
+  }
+
+  public shutdown() {
+    console.log(logPrefix, "Shutting down agent at", this.agentId);
   }
 }
