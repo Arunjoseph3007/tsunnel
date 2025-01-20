@@ -15,7 +15,7 @@ program
   .option("--deny <cidr>", "if provided these addresses will be blocked")
   .action((port, options) => {
     port = parseInt(port);
-    const tcpAgent = new TCPAgent(8002, "localhost", port, options.host);
+    const tcpAgent = new TCPAgent(8001, "localhost", port, options.host);
   });
 
 program

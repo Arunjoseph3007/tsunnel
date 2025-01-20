@@ -1,7 +1,7 @@
 import * as net from "net";
 import { EventEmitter } from "events";
 import { marshall, unmarshall } from "../message/parser";
-import { ControllMsg, MsgType } from "../message/types";
+import { ControllMsg, MsgType, StatusMsgType } from "../message/types";
 
 // The message itself might contain this delimiter and mess up the message
 // This a loop hole and potential cause of failure in the protocol
@@ -14,6 +14,8 @@ type ControllChannelEvents = {
   connEnd: [requestId: string];
   connData: [requestId: string, data: string];
   connMetaData: [requestId: string, data: string];
+  connError: [requestId: string, data: string];
+  statusMsg: [status: StatusMsgType, uri: string];
 };
 
 /**
@@ -64,6 +66,19 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
       if (ctrlMsg.type == MsgType.Metadata) {
         this.emit("connMetaData", ctrlMsg.requestId, ctrlMsg.data);
       }
+      if (ctrlMsg.type == MsgType.Error) {
+        this.emit("connError", ctrlMsg.requestId, ctrlMsg.data);
+      }
+      // TODO: This section is very wrong and should be changed.
+      // The marshalling & unmarshalling logic should be changed, probably to normal JSON parse and stringify
+      // This exist only because it was easy and I am lazy
+      if (ctrlMsg.type == MsgType.Status) {
+        this.emit(
+          "statusMsg",
+          ctrlMsg.data as StatusMsgType,
+          ctrlMsg.requestId
+        );
+      }
     }
 
     this.buffer = fragments[0];
@@ -87,5 +102,13 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
 
   public sendMetaDataMsg(requestId: string, data: string) {
     this.sendCtrlMsg({ requestId, data, type: MsgType.Metadata });
+  }
+
+  public sendErrorMsg(requestId: string, data: string) {
+    this.sendCtrlMsg({ requestId, data, type: MsgType.Error });
+  }
+
+  public sendStatusMsg(status: string, uri: string) {
+    this.sendCtrlMsg({ requestId: uri, data: status, type: MsgType.Status });
   }
 }

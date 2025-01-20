@@ -1,6 +1,7 @@
 import * as net from "net";
 import * as random from "../utils/random";
 import ControllChannel from "../channel/controllChannel";
+import { StatusMsgType } from "../message/types";
 
 export default class TCPTunnel {
   server: net.Server;
@@ -20,6 +21,11 @@ export default class TCPTunnel {
   }
 
   private setupControlChannel() {
+    this.ctrlChannel.sendStatusMsg(
+      StatusMsgType.Success,
+      `http://tcp-127-0-0-1.nip.io:${this.listenPort}`
+    );
+
     this.ctrlChannel.on("connData", (requestId, data) => {
       if (!this.clients.has(requestId)) {
         console.log("Client not found for request", requestId);
@@ -29,6 +35,15 @@ export default class TCPTunnel {
     });
 
     this.ctrlChannel.on("connEnd", (requestId) => {
+      if (!this.clients.has(requestId)) {
+        console.log("Client not found for request", requestId);
+        return;
+      }
+      this.clients.get(requestId)!.end();
+      this.clients.delete(requestId);
+    });
+
+    this.ctrlChannel.on("connError", (requestId, errMsg) => {
       if (!this.clients.has(requestId)) {
         console.log("Client not found for request", requestId);
         return;

@@ -50,7 +50,7 @@ export default class HTTPServer {
 
     console.log("New Agent registered with ID:", agentID);
 
-    const clientTunnel = new HTTPTunnel(agent);
+    const clientTunnel = new HTTPTunnel(agent, agentID);
     this.agentMap.set(agentID, clientTunnel);
 
     agent.on("error", () => {

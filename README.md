@@ -9,8 +9,8 @@ A local tunnel written in Typescript
 
 ## TODO
 
-- [X] ~~Similar Tunnel for HTTP protocol~~
-- [ ] A clean and accesible CLI
+- [x] ~~Similar Tunnel for HTTP protocol~~
+- [x] ~~A clean and accesible CLI~~
 - [ ] Nice logging for served requests
 - [ ] Smarter Delimiting & Escaping for control channel
 - [ ] In control channel instead of storing in string use `Buffers`

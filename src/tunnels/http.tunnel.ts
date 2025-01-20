@@ -3,6 +3,7 @@ import * as net from "net";
 import * as random from "../utils/random";
 import ControllChannel from "../channel/controllChannel";
 import { marshallReqHeaders, unmarshallRespHeaders } from "../message/http";
+import { StatusMsgType } from "../message/types";
 
 type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
@@ -10,9 +11,11 @@ type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
 
 export default class HTTPTunnel {
   ctrlChannel: ControllChannel;
+  agentId: string;
   private responses: Map<string, HTTPSereverResponse>;
 
-  constructor(agentSocket: net.Socket) {
+  constructor(agentSocket: net.Socket, agentId: string) {
+    this.agentId = agentId;
     this.responses = new Map();
     this.ctrlChannel = new ControllChannel(agentSocket);
     this.setupControlChannel();
@@ -34,6 +37,11 @@ export default class HTTPTunnel {
   }
 
   private setupControlChannel() {
+    this.ctrlChannel.sendStatusMsg(
+      StatusMsgType.Success,
+      `http://${this.agentId}.127-0-0-7.nip.io:8000`
+    );
+
     this.ctrlChannel.on("connMetaData", (requestId, data) => {
       if (!this.responses.has(requestId)) {
         console.log("Client not found for request", requestId);
@@ -61,6 +69,16 @@ export default class HTTPTunnel {
         return;
       }
       this.responses.get(requestId)!.end();
+      this.responses.delete(requestId);
+    });
+
+    this.ctrlChannel.on("connError", (requestId, errMsg) => {
+      if (!this.responses.has(requestId)) {
+        console.log("Client not found for request", requestId);
+        return;
+      }
+      this.responses.get(requestId)!.statusCode = 500;
+      this.responses.get(requestId)!.write(errMsg);
       this.responses.delete(requestId);
     });
   }

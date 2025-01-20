@@ -1,6 +1,7 @@
 import * as http from "http";
 import ControllChannel from "../channel/controllChannel";
 import { marshallRespHeaders, unmarshallReqHeaders } from "../message/http";
+import { StatusMsgType } from "../message/types";
 
 export default class HTTPAgent {
   remotePort: number;
@@ -46,12 +47,24 @@ export default class HTTPAgent {
         res.on("data", (ch) => {
           this.ctrlChannel.sendDataMsg(requestId, ch.toString());
         });
+
+        res.on("error", (er) => {
+          this.ctrlChannel.sendErrorMsg(requestId, er.message);
+        });
       });
 
       conn.on("close", () => {
         this.ctrlChannel.sendEndMsg(requestId);
         console.log("Request served", requestId);
         delete this.localRequests[requestId];
+      });
+
+      conn.on("error", (er) => {
+        this.ctrlChannel.sendErrorMsg(requestId, er.message);
+      });
+
+      conn.on("timeout", () => {
+        this.ctrlChannel.sendErrorMsg(requestId, "Request Timed out!");
       });
 
       this.localRequests[requestId] = conn;
@@ -70,6 +83,14 @@ export default class HTTPAgent {
       if (!conn) return;
 
       conn.write(data);
+    });
+
+    this.ctrlChannel.on("statusMsg", (status, uri) => {
+      if (status == StatusMsgType.Success) {
+        console.log("Started listeing at", uri);
+      } else if (status == StatusMsgType.Failure) {
+        console.log("Something went wrong");
+      }
     });
   }
 }

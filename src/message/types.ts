@@ -1,10 +1,17 @@
 import { IncomingHttpHeaders } from "http";
 
 export enum MsgType {
-  Start = "Start",
-  Data = "Data",
-  End = "End",
-  Metadata = "Metadata",
+  Start = "Start", // Marks start of a request
+  Data = "Data", // for data transfer
+  End = "End", // Marks end of a request
+  Metadata = "Metadata", // For sending headers
+  Error = "Error", // Unhandled error
+  Status = "Status", // Transfer tsunnel related data
+}
+
+export enum StatusMsgType {
+  Success = "Success",
+  Failure = "Failure",
 }
 
 export type ControllMsg = {

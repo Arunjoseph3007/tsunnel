@@ -1,5 +1,6 @@
 import * as net from "net";
 import ControllChannel from "../channel/controllChannel";
+import { StatusMsgType } from "../message/types";
 
 export default class TCPAgent {
   remotePort: number;
@@ -40,6 +41,14 @@ export default class TCPAgent {
         this.ctrlChannel.sendEndMsg(requestId);
       });
 
+      conn.on("error", (er) => {
+        this.ctrlChannel.sendErrorMsg(requestId, er.message);
+      });
+
+      conn.on("timeout", () => {
+        this.ctrlChannel.sendErrorMsg(requestId, "Connection timed out!");
+      });
+
       this.localConns[requestId] = conn;
     });
 
@@ -56,6 +65,14 @@ export default class TCPAgent {
       if (!conn) return;
 
       conn.write(data);
+    });
+
+    this.ctrlChannel.on("statusMsg", (status, uri) => {
+      if (status == StatusMsgType.Success) {
+        console.log("Started listeing at", uri);
+      } else if (status == StatusMsgType.Failure) {
+        console.log("Something went wrong");
+      }
     });
   }
 }
