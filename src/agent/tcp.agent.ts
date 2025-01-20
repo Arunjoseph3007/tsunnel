@@ -2,25 +2,33 @@ import * as net from "net";
 import ControllChannel from "../channel/controllChannel";
 import { StatusMsgType } from "../message/types";
 
+export type TCPAgentOptions = {
+  localPort: number;
+  localHost: string;
+  allow?: string[];
+  deny?: string[];
+};
+
 export default class TCPAgent {
   remotePort: number;
   remoteHost: string;
   localPort: number;
   localHost: string;
+  options: TCPAgentOptions;
   ctrlChannel: ControllChannel;
   localConns: Record<string, net.Socket>;
 
   constructor(
     remotePort: number,
     remoteHost: string,
-    localPort: number,
-    localHost: string
+    options: TCPAgentOptions
   ) {
     this.localConns = {};
+    this.options = options;
     this.remotePort = remotePort;
     this.remoteHost = remoteHost;
-    this.localPort = localPort;
-    this.localHost = localHost;
+    this.localPort = options.localPort;
+    this.localHost = options.localHost;
     this.ctrlChannel = ControllChannel.createChannel(
       this.remotePort,
       this.remoteHost

@@ -15,3 +15,6 @@ A local tunnel written in Typescript
 - [ ] Smarter Delimiting & Escaping for control channel
 - [ ] In control channel instead of storing in string use `Buffers`
 - [ ] Better logging using pino and pino-pretty
+- [ ] TCP: allow/deny cidr ranges
+- [ ] HTTP: basic auth
+- [ ] HTTP: custom headers
