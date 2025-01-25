@@ -54,6 +54,11 @@ export default class HTTPTunnel {
       });
     }
 
+    const basicAuthPassed = this.handleBasicAuth(req, res);
+    if (!basicAuthPassed) {
+      return;
+    }
+
     const requestId = random.shortString();
     this.responses.set(requestId, res);
 
@@ -66,6 +71,40 @@ export default class HTTPTunnel {
     req.on("end", () => {
       this.ctrlChannel.sendEndMsg(requestId);
     });
+  }
+
+  private handleBasicAuth(
+    req: http.IncomingMessage,
+    res: HTTPSereverResponse
+  ): boolean {
+    if (!this.options.basicAuth || this.options.basicAuth.length == 0) {
+      return true;
+    }
+
+    if (!req.headers["authorization"]) {
+      res.setHeader("WWW-Authenticate", "Basic realm=tsunnel");
+      res.writeHead(401, "Unauthorized");
+      res.end();
+      return false;
+    }
+
+    const recUser_Pass = req.headers.authorization.split(" ")[1];
+    const [recUser, recPass] = Buffer.from(recUser_Pass, "base64")
+      .toString()
+      .split(":");
+
+    const userMatchFound = this.options.basicAuth.some((user_pass) => {
+      const [user, pass] = user_pass.split(":");
+      return user == recUser && pass == recPass;
+    });
+
+    if (!userMatchFound) {
+      res.writeHead(401, "Unauthorized");
+      res.end();
+      return false;
+    }
+
+    return true;
   }
 
   private setupControlChannel() {

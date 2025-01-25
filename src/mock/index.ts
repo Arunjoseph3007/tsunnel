@@ -14,7 +14,7 @@ const server = createServer((req, res) => {
   console.log(req.method, req.url);
   res.setHeader("heelo", "world");
   res.setHeader("to-be-removed", "thisshoudntbehere");
-  
+
   echo(res, "Method", req.method);
   echo(res, "Url", req.url);
   echo(res, "Headers", "");
@@ -22,7 +22,6 @@ const server = createServer((req, res) => {
   for (const key in req.headers) {
     echo(res, "  " + key, req.headers[key]);
   }
-
 
   res.end();
 });
