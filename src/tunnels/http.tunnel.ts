@@ -5,8 +5,9 @@ import ControllChannel from "../channel/controllChannel";
 import { marshallReqHeaders } from "../message/http";
 import { HTTPResMetadata } from "../message/types";
 import { HTTPTunnelOptions } from "../agent/types";
+import { colorOut } from "../utils/color";
 
-const logPrefix = "[HTTP]";
+const logPrefix = colorOut("[HTTP Tunnel]", "Green");
 
 type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
@@ -82,7 +83,7 @@ export default class HTTPTunnel {
     });
 
     this.ctrlChannel.on("connError", (requestId, errMsg) => {
-      console.log("error happening", errMsg);
+      console.log(logPrefix,"error happening", errMsg);
       if (!this.responses.has(requestId)) {
         console.log(logPrefix, "Client not found for request", requestId);
         return;

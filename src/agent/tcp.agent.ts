@@ -1,8 +1,6 @@
 import * as net from "net";
 import ControllChannel from "../channel/controllChannel";
-import { StatusMsgType } from "../message/types";
 import { TCPAgentOptions } from "./types";
-
 
 export default class TCPAgent {
   remotePort: number;
@@ -33,6 +31,12 @@ export default class TCPAgent {
   }
 
   private setupControlChannel() {
+    this.ctrlChannel.sendTunnelReqMsg(this.options);
+
+    this.ctrlChannel.on("tunnelGranted", (option, uri) => {
+      console.log("Started listeing at", uri);
+    });
+
     this.ctrlChannel.on("connStart", (requestId) => {
       const conn = net.createConnection(this.localPort, this.localHost);
 
@@ -68,14 +72,6 @@ export default class TCPAgent {
       if (!conn) return;
 
       conn.write(data);
-    });
-
-    this.ctrlChannel.on("statusMsg", (status, uri) => {
-      if (status == StatusMsgType.Success) {
-        console.log("Started listeing at", uri);
-      } else if (status == StatusMsgType.Failure) {
-        console.log("Something went wrong");
-      }
     });
   }
 }

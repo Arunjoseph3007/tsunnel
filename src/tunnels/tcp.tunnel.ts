@@ -1,14 +1,16 @@
 import * as net from "net";
 import * as random from "../utils/random";
 import ControllChannel from "../channel/controllChannel";
-import { StatusMsgType } from "../message/types";
+import { TCPTunnelOptions } from "../agent/types";
+import { colorOut } from "../utils/color";
 
-const logPrefix = "[TCP]";
+const logPrefix = colorOut("[TCP Tunnel]", "Cyan");
 
 export default class TCPTunnel {
   server: net.Server;
   listenPort: number;
   ctrlChannel: ControllChannel;
+  options: TCPTunnelOptions;
   private clients: Map<string, net.Socket>;
 
   constructor(agentSocket: net.Socket, listenPort: number) {
@@ -16,6 +18,7 @@ export default class TCPTunnel {
     this.listenPort = listenPort;
     this.ctrlChannel = new ControllChannel(agentSocket);
     this.setupControlChannel();
+    this.options = {};
 
     this.server = net.createServer((client) => {
       this.handleClient(client);
@@ -23,10 +26,15 @@ export default class TCPTunnel {
   }
 
   private setupControlChannel() {
-    this.ctrlChannel.sendStatusMsg(
-      StatusMsgType.Success,
-      `http://tcp-127-0-0-1.nip.io:${this.listenPort}`
-    );
+    this.ctrlChannel.on("reqTunnel", (options) => {
+      this.options = options;
+
+      this.startListening();
+      this.ctrlChannel.sendGrantTunnelMsg(
+        options,
+        `http://tcp-127-0-0-1.nip.io:${this.listenPort}`
+      );
+    });
 
     this.ctrlChannel.on("connData", (requestId, data) => {
       if (!this.clients.has(requestId)) {
