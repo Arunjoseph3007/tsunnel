@@ -1,11 +1,5 @@
-// IMP: This entire module might be replaced by an actual module like ip (https://www.npmjs.com/package/ip)
-// This is just my attempt to restrict external dependencies
+import * as ipUtils from "ip";
 
-/**
- * Checks is the given string is valid IPv4 cidr block
- * Not a perfect function as it returns true for values like 956.0.0.1/8
- * @param cidr
- */
 export const isValidCidr = (cidr: string): boolean => {
   const ipv4CidrRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}\/([0-9]{1,2})$/;
 
@@ -18,32 +12,36 @@ export const isValidIP = (cidr: string): boolean => {
   return ipv4Regex.test(cidr);
 };
 
-export const toNumber = (ip: string) => {
-  return ip
-    .split(".")
-    .map(Number)
-    .reduce((prev, curr) => prev * 256 + curr, 0);
-};
-
-export const toString = (ipNum: number) => {
-  const frags: number[] = [];
-
-  for (let i = 0; i < 4; i++) {
-    const frag = ipNum % 256;
-    frags.push(frag);
-    ipNum = Math.floor(ipNum / 256);
+export const applyFilters = (
+  ip?: string,
+  allow?: string[],
+  deny?: string[]
+): boolean => {
+  if (!ip) {
+    return false;
   }
 
-  return frags.map(String).join(".");
-};
+  if (ip.startsWith("::ffff:")) {
+    ip = ip.slice("::ffff:".length);
+  }
 
-export const subnetContains = (ip: string, cidr: string): boolean => {
-  const [cidrIp, mask] = cidr.split("/");
+  if (deny) {
+    for (const addr of deny) {
+      if (ipUtils.cidrSubnet(addr).contains(ip)) {
+        return false;
+      }
+    }
+  }
 
-  const lowest = toNumber(cidrIp);
-  const highest = lowest + 2 ** (32 - Number(mask));
+  if (!allow || allow.length == 0) {
+    return true;
+  }
 
-  const ipNum = toNumber(ip);
+  for (const addr of allow) {
+    if (ipUtils.cidrSubnet(addr).contains(ip)) {
+      return true;
+    }
+  }
 
-  return ipNum >= lowest && ipNum <= highest;
+  return false;
 };

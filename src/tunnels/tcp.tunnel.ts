@@ -1,5 +1,6 @@
 import * as net from "net";
 import * as random from "../utils/random";
+import * as ip from "../utils/ip";
 import ControllChannel from "../channel/controllChannel";
 import { TCPTunnelOptions } from "../agent/types";
 import { colorOut } from "../utils/color";
@@ -64,6 +65,17 @@ export default class TCPTunnel {
   }
 
   private handleClient(client: net.Socket) {
+    const canAccess = ip.applyFilters(
+      client.remoteAddress,
+      this.options.allow,
+      this.options.deny
+    );
+
+    if (!canAccess) {
+      client.end();
+      return;
+    }
+
     const requestId = random.shortString();
     this.clients.set(requestId, client);
 

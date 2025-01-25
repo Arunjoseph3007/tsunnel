@@ -1,6 +1,7 @@
 import * as http from "http";
 import * as net from "net";
 import * as random from "../utils/random";
+import * as ip from "../utils/ip";
 import ControllChannel from "../channel/controllChannel";
 import { marshallReqHeaders } from "../message/http";
 import { HTTPResMetadata } from "../message/types";
@@ -28,6 +29,18 @@ export default class HTTPTunnel {
   }
 
   public handleRequest(req: http.IncomingMessage, res: HTTPSereverResponse) {
+    const canAccess = ip.applyFilters(
+      req.socket.remoteAddress,
+      this.options.allow,
+      this.options.deny
+    );
+    if (!canAccess) {
+      res.statusCode = 401;
+      res.write("Unauthorized");
+      res.end();
+      return;
+    }
+
     const requestId = random.shortString();
     this.responses.set(requestId, res);
 
@@ -83,7 +96,7 @@ export default class HTTPTunnel {
     });
 
     this.ctrlChannel.on("connError", (requestId, errMsg) => {
-      console.log(logPrefix,"error happening", errMsg);
+      console.log(logPrefix, "error happening", errMsg);
       if (!this.responses.has(requestId)) {
         console.log(logPrefix, "Client not found for request", requestId);
         return;
