@@ -1,13 +1,7 @@
 import * as net from "net";
 import { EventEmitter } from "events";
 import { marshall, unmarshall } from "../message/parser";
-import {
-  ControllMsg,
-  MsgType,
-  ReqTunnelMsg,
-  StatusMsg,
-  StatusMsgType,
-} from "../message/types";
+import { ControllMsg, MsgType, ReqTunnelMsg } from "../message/types";
 
 // The message itself might contain this delimiter and mess up the message
 // This a loop hole and potential cause of failure in the protocol
@@ -21,7 +15,6 @@ type ControllChannelEvents = {
   connData: [requestId: string, data: string];
   connMetaData: [requestId: string, data: any];
   connError: [requestId: string, data: string];
-  statusMsg: [status: StatusMsgType, uri: string];
   reqTunnel: [option: ReqTunnelMsg];
   tunnelGranted: [options: ReqTunnelMsg, uri: string];
 };
@@ -79,10 +72,6 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
         console.log("what the hell");
         this.emit("connError", ctrlMsg.requestId, ctrlMsg.data);
       }
-      if (ctrlMsg.type == MsgType.Status) {
-        const statusMsg = ctrlMsg.data as StatusMsg;
-        this.emit("statusMsg", statusMsg.type, statusMsg.uri);
-      }
       if (ctrlMsg.type == MsgType.ReqTunnel) {
         const reqTunnelMsg = ctrlMsg.data as ReqTunnelMsg;
         this.emit("reqTunnel", reqTunnelMsg);
@@ -118,14 +107,6 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
 
   public sendErrorMsg(requestId: string, data: string) {
     this.sendCtrlMsg({ requestId, data, type: MsgType.Error });
-  }
-
-  public sendStatusMsg(status: StatusMsgType, uri: string) {
-    this.sendCtrlMsg<StatusMsg>({
-      requestId: "",
-      data: { type: status, uri },
-      type: MsgType.Status,
-    });
   }
 
   public sendTunnelReqMsg(data: ReqTunnelMsg) {

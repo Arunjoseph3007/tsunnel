@@ -7,7 +7,6 @@ export enum MsgType {
   End = "End", // Marks end of a request
   Metadata = "Metadata", // For sending headers
   Error = "Error", // Unhandled error
-  Status = "Status", // Transfer tsunnel related data
   ReqTunnel = "ReqTunnel", // For requesting tunnel
   TunnelGranted = "TunnelGranted", // For granting tunnel
 }
@@ -16,16 +15,6 @@ export type ControllMsg<T = string> = {
   type: MsgType;
   requestId: string;
   data?: T;
-};
-
-export enum StatusMsgType {
-  Success = "Success",
-  Failure = "Failure",
-}
-
-export type StatusMsg = {
-  type: StatusMsgType;
-  uri: string;
 };
 
 export type ReqTunnelMsg = TCPAgentOptions | HTTPAgentOptions;
