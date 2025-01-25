@@ -86,6 +86,19 @@ export default class HTTPTunnel {
 
       const metadata = data as HTTPResMetadata;
 
+      if (this.options.resHeadersAdd) {
+        this.options.resHeadersAdd.forEach((key_value) => {
+          const [key, value] = key_value.split(":");
+          data.headers[key] = value;
+        });
+      }
+
+      if (this.options.resHeadersRm) {
+        this.options.resHeadersRm.forEach((key) => {
+          delete data.headers[key];
+        });
+      }
+
       this.responses
         .get(requestId)!
         .writeHead(metadata.statusCode, metadata.headers);
