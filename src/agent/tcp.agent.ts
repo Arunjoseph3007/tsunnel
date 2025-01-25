@@ -1,13 +1,8 @@
 import * as net from "net";
 import ControllChannel from "../channel/controllChannel";
 import { StatusMsgType } from "../message/types";
+import { TCPAgentOptions } from "./types";
 
-export type TCPAgentOptions = {
-  localPort: number;
-  localHost: string;
-  allow?: string[];
-  deny?: string[];
-};
 
 export default class TCPAgent {
   remotePort: number;

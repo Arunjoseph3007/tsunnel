@@ -1,11 +1,11 @@
 import * as http from "http";
 import ControllChannel from "../channel/controllChannel";
-import { marshallRespHeaders, unmarshallReqHeaders } from "../message/http";
-import { StatusMsgType } from "../message/types";
+import { marshallRespHeaders } from "../message/http";
+import { HTTPAgentOptions } from "./types";
+import { HTTPReqMetadata } from "../message/types";
 
 export default class HTTPAgent {
-  remotePort: number;
-  remoteHost: string;
+  options: HTTPAgentOptions;
   localPort: number;
   localHost: string;
   ctrlChannel: ControllChannel;
@@ -14,25 +14,26 @@ export default class HTTPAgent {
   constructor(
     remotePort: number,
     remoteHost: string,
-    localPort: number,
-    localHost: string
+    options: HTTPAgentOptions
   ) {
     this.localRequests = {};
-    this.remotePort = remotePort;
-    this.remoteHost = remoteHost;
-    this.localPort = localPort;
-    this.localHost = localHost;
-    this.ctrlChannel = ControllChannel.createChannel(
-      this.remotePort,
-      this.remoteHost
-    );
+    this.options = options;
+    this.localPort = this.options.localPort;
+    this.localHost = this.options.localHost;
+    this.ctrlChannel = ControllChannel.createChannel(remotePort, remoteHost);
 
     this.setupControlChannel();
   }
 
   private setupControlChannel() {
+    this.ctrlChannel.sendTunnelReqMsg(this.options);
+
+    this.ctrlChannel.on("tunnelGranted", (options, uri) => {
+      console.log("Started listeing at", uri);
+    });
+
     this.ctrlChannel.on("connMetaData", (requestId, data) => {
-      const metaData = unmarshallReqHeaders(data);
+      const metaData = data as HTTPReqMetadata;
       const conn = http.request({
         port: this.localPort,
         host: this.localHost,
@@ -49,6 +50,7 @@ export default class HTTPAgent {
         });
 
         res.on("error", (er) => {
+          console.log("err happened in resp", er);
           this.ctrlChannel.sendErrorMsg(requestId, er.message);
         });
       });
@@ -60,10 +62,12 @@ export default class HTTPAgent {
       });
 
       conn.on("error", (er) => {
+        console.log("err happened in conn", er);
         this.ctrlChannel.sendErrorMsg(requestId, er.message);
       });
 
       conn.on("timeout", () => {
+        console.log("timeout error");
         this.ctrlChannel.sendErrorMsg(requestId, "Request Timed out!");
       });
 
@@ -83,14 +87,6 @@ export default class HTTPAgent {
       if (!conn) return;
 
       conn.write(data);
-    });
-
-    this.ctrlChannel.on("statusMsg", (status, uri) => {
-      if (status == StatusMsgType.Success) {
-        console.log("Started listeing at", uri);
-      } else if (status == StatusMsgType.Failure) {
-        console.log("Something went wrong");
-      }
     });
   }
 }

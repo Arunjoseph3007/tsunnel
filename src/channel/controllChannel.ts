@@ -1,7 +1,13 @@
 import * as net from "net";
 import { EventEmitter } from "events";
 import { marshall, unmarshall } from "../message/parser";
-import { ControllMsg, MsgType, StatusMsgType } from "../message/types";
+import {
+  ControllMsg,
+  MsgType,
+  ReqTunnelMsg,
+  StatusMsg,
+  StatusMsgType,
+} from "../message/types";
 
 // The message itself might contain this delimiter and mess up the message
 // This a loop hole and potential cause of failure in the protocol
@@ -13,9 +19,11 @@ type ControllChannelEvents = {
   connStart: [requestId: string];
   connEnd: [requestId: string];
   connData: [requestId: string, data: string];
-  connMetaData: [requestId: string, data: string];
+  connMetaData: [requestId: string, data: any];
   connError: [requestId: string, data: string];
   statusMsg: [status: StatusMsgType, uri: string];
+  reqTunnel: [option: ReqTunnelMsg];
+  tunnelGranted: [options: ReqTunnelMsg, uri: string];
 };
 
 /**
@@ -51,7 +59,8 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
 
     while (fragments.length > 1) {
       const msgString = fragments.shift()!;
-      const ctrlMsg = unmarshall(Buffer.from(msgString));
+      const ctrlMsg = unmarshall<any>(Buffer.from(msgString));
+
       this.emit("ctrlMsg", ctrlMsg);
 
       if (ctrlMsg.type == MsgType.Start) {
@@ -67,24 +76,27 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
         this.emit("connMetaData", ctrlMsg.requestId, ctrlMsg.data);
       }
       if (ctrlMsg.type == MsgType.Error) {
+        console.log("what the hell");
         this.emit("connError", ctrlMsg.requestId, ctrlMsg.data);
       }
-      // TODO: This section is very wrong and should be changed.
-      // The marshalling & unmarshalling logic should be changed, probably to normal JSON parse and stringify
-      // This exist only because it was easy and I am lazy
       if (ctrlMsg.type == MsgType.Status) {
-        this.emit(
-          "statusMsg",
-          ctrlMsg.data as StatusMsgType,
-          ctrlMsg.requestId
-        );
+        const statusMsg = ctrlMsg.data as StatusMsg;
+        this.emit("statusMsg", statusMsg.type, statusMsg.uri);
+      }
+      if (ctrlMsg.type == MsgType.ReqTunnel) {
+        const reqTunnelMsg = ctrlMsg.data as ReqTunnelMsg;
+        this.emit("reqTunnel", reqTunnelMsg);
+      }
+      if (ctrlMsg.type == MsgType.TunnelGranted) {
+        const tunnelGrantedMsg = ctrlMsg.data as ReqTunnelMsg & { uri: string };
+        this.emit("tunnelGranted", tunnelGrantedMsg, tunnelGrantedMsg.uri);
       }
     }
 
     this.buffer = fragments[0];
   }
 
-  public sendCtrlMsg(ctrlMsg: ControllMsg) {
+  public sendCtrlMsg<T = string>(ctrlMsg: ControllMsg<T>) {
     this.socket.write(marshall(ctrlMsg) + DELIMITER);
   }
 
@@ -100,7 +112,7 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
     this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
   }
 
-  public sendMetaDataMsg(requestId: string, data: string) {
+  public sendMetaDataMsg(requestId: string, data: any) {
     this.sendCtrlMsg({ requestId, data, type: MsgType.Metadata });
   }
 
@@ -108,7 +120,27 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
     this.sendCtrlMsg({ requestId, data, type: MsgType.Error });
   }
 
-  public sendStatusMsg(status: string, uri: string) {
-    this.sendCtrlMsg({ requestId: uri, data: status, type: MsgType.Status });
+  public sendStatusMsg(status: StatusMsgType, uri: string) {
+    this.sendCtrlMsg<StatusMsg>({
+      requestId: "",
+      data: { type: status, uri },
+      type: MsgType.Status,
+    });
+  }
+
+  public sendTunnelReqMsg(data: ReqTunnelMsg) {
+    this.sendCtrlMsg<ReqTunnelMsg>({
+      requestId: "",
+      data,
+      type: MsgType.ReqTunnel,
+    });
+  }
+
+  public sendGrantTunnelMsg(data: ReqTunnelMsg, uri: string) {
+    this.sendCtrlMsg<ReqTunnelMsg & { uri: string }>({
+      requestId: "",
+      data: { ...data, uri },
+      type: MsgType.TunnelGranted,
+    });
   }
 }

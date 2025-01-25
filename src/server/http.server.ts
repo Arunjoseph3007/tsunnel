@@ -2,8 +2,9 @@ import * as net from "net";
 import * as http from "http";
 import * as random from "../utils/random";
 import HTTPTunnel from "../tunnels/http.tunnel";
+import { colorOut } from "../utils/color";
 
-const logPrefix = "[HTTP]";
+const logPrefix = colorOut("[HTTP]", "Magenta");
 
 type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
@@ -32,6 +33,8 @@ export default class HTTPServer {
   private handleClient(req: http.IncomingMessage, res: HTTPSereverResponse) {
     const agentID = this.getAgentId(req);
 
+    console.log(logPrefix, "New request for agent", agentID);
+
     if (!this.agentMap.has(agentID)) {
       res.write("Couldn't find agent for " + agentID);
       res.end();
@@ -49,7 +52,7 @@ export default class HTTPServer {
   private handleAgent(agent: net.Socket) {
     // This might need to be changed to secureString (UUID)
     const agentID = random.shortString();
-
+    
     console.log(logPrefix, "New Agent registered with ID:", agentID);
 
     const clientTunnel = new HTTPTunnel(agent, agentID);

@@ -1,7 +1,8 @@
 import * as net from "net";
 import TCPTunnel from "../tunnels/tcp.tunnel";
+import { colorOut } from "../utils/color";
 
-const logPrefix = "[TCP]";
+const logPrefix = colorOut("[TCP]", "Yellow");
 
 export default class TCPServer {
   private portMap: Map<number, TCPTunnel>;

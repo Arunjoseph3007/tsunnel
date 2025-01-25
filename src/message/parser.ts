@@ -1,11 +1,11 @@
-import { ControllMsg, MsgType } from "./types";
+import { ControllMsg } from "./types";
 
-export const unmarshall = (
+export const unmarshall = <T = string>(
   data: Buffer<ArrayBufferLike>
-): Required<ControllMsg> => {
+): Required<ControllMsg<T>> => {
   return JSON.parse(data.toString());
 };
 
-export const marshall = (ctrlMsg: ControllMsg): string => {
+export const marshall = <T>(ctrlMsg: ControllMsg<T>): string => {
   return JSON.stringify(ctrlMsg);
 };

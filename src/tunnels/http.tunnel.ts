@@ -2,8 +2,9 @@ import * as http from "http";
 import * as net from "net";
 import * as random from "../utils/random";
 import ControllChannel from "../channel/controllChannel";
-import { marshallReqHeaders, unmarshallRespHeaders } from "../message/http";
-import { StatusMsgType } from "../message/types";
+import { marshallReqHeaders } from "../message/http";
+import { HTTPResMetadata } from "../message/types";
+import { HTTPTunnelOptions } from "../agent/types";
 
 const logPrefix = "[HTTP]";
 
@@ -13,6 +14,7 @@ type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
 
 export default class HTTPTunnel {
   ctrlChannel: ControllChannel;
+  options: HTTPTunnelOptions;
   agentId: string;
   private responses: Map<string, HTTPSereverResponse>;
 
@@ -20,6 +22,7 @@ export default class HTTPTunnel {
     this.agentId = agentId;
     this.responses = new Map();
     this.ctrlChannel = new ControllChannel(agentSocket);
+    this.options = {};
     this.setupControlChannel();
   }
 
@@ -39,10 +42,14 @@ export default class HTTPTunnel {
   }
 
   private setupControlChannel() {
-    this.ctrlChannel.sendStatusMsg(
-      StatusMsgType.Success,
-      `http://${this.agentId}.127-0-0-7.nip.io:8000`
-    );
+    this.ctrlChannel.on("reqTunnel", (options) => {
+      this.options = options;
+
+      this.ctrlChannel.sendGrantTunnelMsg(
+        options,
+        `http://${this.agentId}.127-0-0-7.nip.io:8000`
+      );
+    });
 
     this.ctrlChannel.on("connMetaData", (requestId, data) => {
       if (!this.responses.has(requestId)) {
@@ -50,7 +57,7 @@ export default class HTTPTunnel {
         return;
       }
 
-      const metadata = unmarshallRespHeaders(data);
+      const metadata = data as HTTPResMetadata;
 
       this.responses
         .get(requestId)!
@@ -59,7 +66,7 @@ export default class HTTPTunnel {
 
     this.ctrlChannel.on("connData", (requestId, data) => {
       if (!this.responses.has(requestId)) {
-        console.log("Client not found for request", requestId);
+        console.log(logPrefix, "Client not found for request", requestId);
         return;
       }
       this.responses.get(requestId)!.write(data);
@@ -75,6 +82,7 @@ export default class HTTPTunnel {
     });
 
     this.ctrlChannel.on("connError", (requestId, errMsg) => {
+      console.log("error happening", errMsg);
       if (!this.responses.has(requestId)) {
         console.log(logPrefix, "Client not found for request", requestId);
         return;

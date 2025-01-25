@@ -97,7 +97,17 @@ program
       }
     }
 
-    const httpAgent = new HTTPAgent(8002, "localhost", localPort, options.host);
+    if (options.basicAuth) {
+      const basicAuth = options.basicAuth as string[];
+      if (!basicAuth.every(httpHeaders.validHeaderFormat)) {
+        return console.error("Some of the basicAuth options are not valid");
+      }
+    }
+
+    const httpAgent = new HTTPAgent(8002, options.host, {
+      ...options,
+      localPort,
+    });
   });
 
 program.parse();

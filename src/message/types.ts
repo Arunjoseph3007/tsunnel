@@ -1,4 +1,5 @@
 import { IncomingHttpHeaders } from "http";
+import { HTTPAgentOptions, TCPAgentOptions } from "../agent/types";
 
 export enum MsgType {
   Start = "Start", // Marks start of a request
@@ -7,18 +8,27 @@ export enum MsgType {
   Metadata = "Metadata", // For sending headers
   Error = "Error", // Unhandled error
   Status = "Status", // Transfer tsunnel related data
+  ReqTunnel = "ReqTunnel", // For requesting tunnel
+  TunnelGranted = "TunnelGranted", // For granting tunnel
 }
+
+export type ControllMsg<T = string> = {
+  type: MsgType;
+  requestId: string;
+  data?: T;
+};
 
 export enum StatusMsgType {
   Success = "Success",
   Failure = "Failure",
 }
 
-export type ControllMsg = {
-  type: MsgType;
-  requestId: string;
-  data?: string;
+export type StatusMsg = {
+  type: StatusMsgType;
+  uri: string;
 };
+
+export type ReqTunnelMsg = TCPAgentOptions | HTTPAgentOptions;
 
 export type HTTPReqMetadata = {
   url: string;
