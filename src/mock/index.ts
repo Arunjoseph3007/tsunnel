@@ -14,7 +14,11 @@ const server = createServer((req, res) => {
   console.log(req.method, req.url);
   echo(res, "Method", req.method);
   echo(res, "Url", req.url);
-  echo(res, "Headers", req.rawHeaders);
+  echo(res, "Headers", "");
+
+  for (const key in req.headers) {
+    echo(res, "  " + key, req.headers[key]);
+  }
 
   res.end();
 });

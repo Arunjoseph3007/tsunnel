@@ -41,6 +41,19 @@ export default class HTTPTunnel {
       return;
     }
 
+    if (this.options.reqHeadersAdd) {
+      this.options.reqHeadersAdd.forEach((key_value) => {
+        const [key, value] = key_value.split(":");
+        req.headers[key] = value;
+      });
+    }
+
+    if (this.options.reqHeadersRm) {
+      this.options.reqHeadersRm.forEach((key) => {
+        delete req.headers[key];
+      });
+    }
+
     const requestId = random.shortString();
     this.responses.set(requestId, res);
 

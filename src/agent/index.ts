@@ -76,24 +76,10 @@ program
       }
     }
 
-    if (options.reqHeadersRm) {
-      const reqHeadersRm = options.reqHeadersRm as string[];
-      if (!reqHeadersRm.every(httpHeaders.validHeaderFormat)) {
-        return console.error("Some of the reqHeadersRm options are not valid");
-      }
-    }
-
     if (options.resHeadersAdd) {
       const resHeadersAdd = options.resHeadersAdd as string[];
       if (!resHeadersAdd.every(httpHeaders.validHeaderFormat)) {
         return console.error("Some of the resHeadersAdd options are not valid");
-      }
-    }
-
-    if (options.resHeadersRm) {
-      const resHeadersRm = options.resHeadersRm as string[];
-      if (!resHeadersRm.every(httpHeaders.validHeaderFormat)) {
-        return console.error("Some of the resHeadersRm options are not valid");
       }
     }
 
