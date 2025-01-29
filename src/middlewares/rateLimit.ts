@@ -37,7 +37,7 @@ export default class RateLimitMiddleware implements HTTPMiddleware {
     res.setHeader("X-Rate-Limit-Remaining", Math.max(remainingReq, 0));
 
     if (remainingReq > 0) {
-      res.setHeader("X-RateLimit", "Limit reached");
+      res.writeHead(429, "Too Many Requests");
       res.end();
       return false;
     }
