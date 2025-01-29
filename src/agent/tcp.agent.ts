@@ -1,6 +1,9 @@
 import * as net from "net";
 import ControllChannel from "../channel/controllChannel";
 import { TCPAgentOptions } from "./types";
+import { colorOut } from "../utils/color";
+
+const logPrefix = colorOut("[TCP]", "Yellow");
 
 export default class TCPAgent {
   remotePort: number;
@@ -34,7 +37,7 @@ export default class TCPAgent {
     this.ctrlChannel.sendTunnelReqMsg(this.options);
 
     this.ctrlChannel.on("tunnelGranted", (option, uri) => {
-      console.log("Started listeing at", uri);
+      console.log(logPrefix, "Started listeing at", uri);
     });
 
     this.ctrlChannel.on("connStart", (requestId) => {

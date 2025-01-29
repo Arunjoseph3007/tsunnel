@@ -3,6 +3,9 @@ import ControllChannel from "../channel/controllChannel";
 import { marshallRespHeaders } from "../message/http";
 import { HTTPAgentOptions } from "./types";
 import { HTTPReqMetadata } from "../message/types";
+import { colorOut } from "../utils/color";
+
+const logPrefix = colorOut("[HTTP]", "Magenta");
 
 export default class HTTPAgent {
   options: HTTPAgentOptions;
@@ -29,7 +32,7 @@ export default class HTTPAgent {
     this.ctrlChannel.sendTunnelReqMsg(this.options);
 
     this.ctrlChannel.on("tunnelGranted", (options, uri) => {
-      console.log("Started listeing at", uri);
+      console.log(logPrefix, "Started listeing at", uri);
     });
 
     this.ctrlChannel.on("connMetaData", (requestId, data) => {
@@ -50,24 +53,24 @@ export default class HTTPAgent {
         });
 
         res.on("error", (er) => {
-          console.log("err happened in resp", er);
+          console.log(logPrefix, "err happened in resp", er);
           this.ctrlChannel.sendErrorMsg(requestId, er.message);
         });
       });
 
       conn.on("close", () => {
         this.ctrlChannel.sendEndMsg(requestId);
-        console.log("Request served", requestId);
+        console.log(logPrefix, "Request served", requestId);
         delete this.localRequests[requestId];
       });
 
       conn.on("error", (er) => {
-        console.log("err happened in conn", er);
+        console.log(logPrefix, "err happened in conn", er);
         this.ctrlChannel.sendErrorMsg(requestId, er.message);
       });
 
       conn.on("timeout", () => {
-        console.log("timeout error");
+        console.log(logPrefix, "timeout error");
         this.ctrlChannel.sendErrorMsg(requestId, "Request Timed out!");
       });
 
@@ -79,7 +82,7 @@ export default class HTTPAgent {
       if (!conn) return;
 
       conn.end();
-      console.log("Request received", requestId);
+      console.log(logPrefix, "Request received", requestId);
     });
 
     this.ctrlChannel.on("connData", (requestId, data) => {
