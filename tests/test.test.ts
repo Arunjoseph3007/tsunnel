@@ -1,7 +1,8 @@
-import { test, suite, expect } from "vitest";
+import assert from "node:assert";
+import { test, suite } from "node:test";
 
 suite("Test", () => {
   test("basic math", () => {
-    expect(2 + 2).toBe(4);
+    assert.equal(2 + 2, 4);
   });
 });
