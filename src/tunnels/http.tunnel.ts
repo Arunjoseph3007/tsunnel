@@ -1,14 +1,15 @@
-import * as http from "http";
 import * as net from "net";
+import * as http from "http";
 import * as random from "../utils/random";
-import ControllChannel from "../channel/controllChannel";
-import { marshallReqHeaders } from "../message/http";
-import { HTTPResMetadata, HTTPServerResponse } from "../message/types";
-import { HTTPTunnelOptions } from "../agent/types";
 import { colorOut } from "../utils/color";
 import { HTTPMiddleware } from "../middlewares/types";
-import IPRestrictMiddleware from "../middlewares/ipRestrict";
+import { HTTPTunnelOptions } from "../agent/types";
+import { marshallReqHeaders } from "../message/http";
+import { HTTPResMetadata, HTTPServerResponse } from "../message/types";
+import ControllChannel from "../channel/controllChannel";
 import BasicAuthMiddleware from "../middlewares/basicAuth";
+import RateLimitMiddleware from "../middlewares/rateLimit";
+import IPRestrictMiddleware from "../middlewares/ipRestrict";
 import CustomRequestHeadersMiddleware from "../middlewares/customRequestHeaders";
 
 const logPrefix = colorOut("[HTTP Tunnel]", "Green");
@@ -59,6 +60,7 @@ export default class HTTPTunnel {
       this.middlewares.push(new IPRestrictMiddleware(options));
       this.middlewares.push(new BasicAuthMiddleware(options));
       this.middlewares.push(new CustomRequestHeadersMiddleware(options));
+      this.middlewares.push(new RateLimitMiddleware(options));
 
       this.ctrlChannel.sendGrantTunnelMsg(
         options,
