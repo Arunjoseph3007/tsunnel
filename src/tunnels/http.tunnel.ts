@@ -1,62 +1,40 @@
 import * as http from "http";
 import * as net from "net";
 import * as random from "../utils/random";
-import * as ip from "../utils/ip";
 import ControllChannel from "../channel/controllChannel";
 import { marshallReqHeaders } from "../message/http";
-import { HTTPResMetadata } from "../message/types";
+import { HTTPResMetadata, HTTPServerResponse } from "../message/types";
 import { HTTPTunnelOptions } from "../agent/types";
 import { colorOut } from "../utils/color";
+import { HTTPMiddleware } from "../middlewares/types";
+import IPRestrictMiddleware from "../middlewares/ipRestrict";
+import BasicAuthMiddleware from "../middlewares/basicAuth";
+import CustomRequestHeadersMiddleware from "../middlewares/customRequestHeaders";
 
 const logPrefix = colorOut("[HTTP Tunnel]", "Green");
-
-type HTTPSereverResponse = http.ServerResponse<http.IncomingMessage> & {
-  req: http.IncomingMessage;
-};
 
 export default class HTTPTunnel {
   ctrlChannel: ControllChannel;
   options: HTTPTunnelOptions;
   agentId: string;
-  private responses: Map<string, HTTPSereverResponse>;
+  private responses: Map<string, HTTPServerResponse>;
+  private middlewares: HTTPMiddleware[];
 
   constructor(agentSocket: net.Socket, agentId: string) {
     this.agentId = agentId;
     this.responses = new Map();
     this.ctrlChannel = new ControllChannel(agentSocket);
     this.options = {};
+    this.middlewares = [];
     this.setupControlChannel();
   }
 
-  public handleRequest(req: http.IncomingMessage, res: HTTPSereverResponse) {
-    const canAccess = ip.applyFilters(
-      req.socket.remoteAddress,
-      this.options.allow,
-      this.options.deny
-    );
-    if (!canAccess) {
-      res.statusCode = 401;
-      res.write("Unauthorized");
-      res.end();
-      return;
-    }
-
-    if (this.options.reqHeadersAdd) {
-      this.options.reqHeadersAdd.forEach((key_value) => {
-        const [key, value] = key_value.split(":");
-        req.headers[key] = value;
-      });
-    }
-
-    if (this.options.reqHeadersRm) {
-      this.options.reqHeadersRm.forEach((key) => {
-        delete req.headers[key];
-      });
-    }
-
-    const basicAuthPassed = this.handleBasicAuth(req, res);
-    if (!basicAuthPassed) {
-      return;
+  public handleRequest(req: http.IncomingMessage, res: HTTPServerResponse) {
+    for (const middleware of this.middlewares) {
+      const canContinue = middleware.handle(req, res);
+      if (canContinue) {
+        return;
+      }
     }
 
     const requestId = random.shortString();
@@ -73,43 +51,14 @@ export default class HTTPTunnel {
     });
   }
 
-  private handleBasicAuth(
-    req: http.IncomingMessage,
-    res: HTTPSereverResponse
-  ): boolean {
-    if (!this.options.basicAuth || this.options.basicAuth.length == 0) {
-      return true;
-    }
-
-    if (!req.headers["authorization"]) {
-      res.setHeader("WWW-Authenticate", "Basic realm=tsunnel");
-      res.writeHead(401, "Unauthorized");
-      res.end();
-      return false;
-    }
-
-    const recUser_Pass = req.headers.authorization.split(" ")[1];
-    const [recUser, recPass] = Buffer.from(recUser_Pass, "base64")
-      .toString()
-      .split(":");
-
-    const userMatchFound = this.options.basicAuth.some((user_pass) => {
-      const [user, pass] = user_pass.split(":");
-      return user == recUser && pass == recPass;
-    });
-
-    if (!userMatchFound) {
-      res.writeHead(401, "Unauthorized");
-      res.end();
-      return false;
-    }
-
-    return true;
-  }
-
   private setupControlChannel() {
     this.ctrlChannel.on("reqTunnel", (options) => {
       this.options = options;
+
+      this.middlewares = [];
+      this.middlewares.push(new IPRestrictMiddleware(options));
+      this.middlewares.push(new BasicAuthMiddleware(options));
+      this.middlewares.push(new CustomRequestHeadersMiddleware(options));
 
       this.ctrlChannel.sendGrantTunnelMsg(
         options,

@@ -1,4 +1,4 @@
-import { IncomingHttpHeaders } from "http";
+import { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "http";
 import { HTTPAgentOptions, TCPAgentOptions } from "../agent/types";
 
 export enum MsgType {
@@ -64,4 +64,8 @@ export const makeMetaDataMsg = (
     type: MsgType.Metadata,
     data: data.toString(),
   };
+};
+
+export type HTTPServerResponse = ServerResponse<IncomingMessage> & {
+  req: IncomingMessage;
 };
