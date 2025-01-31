@@ -1,0 +1,16 @@
+{
+  "services": [
+    {
+      "name": "foo",
+      "type": "http",
+      "localPort": "8010",
+      "localHost": "localhost",
+      "basicAuth": "arun:password"
+    },
+    {
+      "name": "foo",
+      "type": "tcp",
+      "localPort": "8011"
+    }
+  ]
+}

@@ -2,7 +2,15 @@ import HTTPAgent from "./http.agent";
 import TCPAgent from "./tcp.agent";
 import { Command } from "commander";
 import * as ip from "../utils/ip";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import * as httpHeaders from "../utils/httpHeaders";
+
+// These could be loaded from a config file
+const tcpPort = 8001;
+const httpPort = 8002;
+// I know its funny
+const remoteHost = "localhost";
 
 const program = new Command("tsunnel");
 
@@ -32,7 +40,7 @@ program
       }
     }
 
-    const tcpAgent = new TCPAgent(8001, "localhost", {
+    const tcpAgent = new TCPAgent(tcpPort, remoteHost, {
       localHost: options.host,
       localPort,
       allow: options.allow,
@@ -90,10 +98,74 @@ program
       }
     }
 
-    const httpAgent = new HTTPAgent(8002, options.host, {
+    const httpAgent = new HTTPAgent(httpPort, remoteHost, {
       ...options,
       localPort,
+      localHost: options.host,
     });
+  });
+
+program
+  .command("apply")
+  .description("Start services as per a given config file")
+  .argument("file", "File with the services defined")
+  .action((file: string) => {
+    const workDir = process.cwd();
+    const filePath = join(workDir, file);
+
+    const filesExists = existsSync(filePath);
+    if (!filesExists) {
+      console.error("File not found", file);
+      return;
+    }
+
+    const fileContent = readFileSync(filePath, "utf-8");
+    if (!fileContent) {
+      console.error("Empty file");
+      return;
+    }
+
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(fileContent);
+    } catch (error) {
+      console.error("Invalid json");
+      return;
+    }
+
+    // Ideally we should not directly start agents while iterating
+    // We should first sanitize and store in an array and return for misformed data
+    // I dont like these process.exit() calls
+    for (const service of parsedContent.services) {
+      const { type, ...options } = service;
+
+      if (!options.localHost) {
+        options.localHost = "localhost";
+      }
+      if (!options.localPort) {
+        console.log("`localPort` must be defined");
+        process.exit(1);
+      }
+
+      switch (type) {
+        case "http": {
+          const httpAgent = new HTTPAgent(httpPort, remoteHost, options);
+          break;
+        }
+        case "tcp": {
+          const tcpAgent = new TCPAgent(tcpPort, remoteHost, options);
+          break;
+        }
+        default: {
+          console.error(`Unknown protocol ${type}. We support tcp and http`);
+          process.exit(1);
+        }
+      }
+    }
+
+    console.info(
+      `${parsedContent.services.length} services successfully started`
+    );
   });
 
 program.parse();

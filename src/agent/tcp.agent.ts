@@ -13,11 +13,12 @@ export default class TCPAgent {
   options: TCPAgentOptions;
   ctrlChannel: ControllChannel;
   localConns: Record<string, net.Socket>;
+  logPrefix: string;
 
   constructor(
     remotePort: number,
     remoteHost: string,
-    options: TCPAgentOptions
+    options: TCPAgentOptions & { name?: string }
   ) {
     this.localConns = {};
     this.options = options;
@@ -30,14 +31,23 @@ export default class TCPAgent {
       this.remoteHost
     );
 
+    this.logPrefix = colorOut("[TCP]", "Yellow");
+    if (options.name) {
+      this.logPrefix += " " + colorOut(options.name, "BgGreen");
+    }
+
     this.setupControlChannel();
+  }
+
+  private writeLog(...args: any[]) {
+    console.log(this.logPrefix, ...args);
   }
 
   private setupControlChannel() {
     this.ctrlChannel.sendTunnelReqMsg(this.options);
 
     this.ctrlChannel.on("tunnelGranted", (option, uri) => {
-      console.log(logPrefix, "Started listeing at", uri);
+      this.writeLog("Started listeing at", uri);
     });
 
     this.ctrlChannel.on("connStart", (requestId) => {
