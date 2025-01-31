@@ -1,12 +1,8 @@
 import * as net from "net";
+import * as bufferUtils from "./buffer";
 import { EventEmitter } from "events";
 import { marshall, unmarshall } from "../message/parser";
 import { ControllMsg, MsgType, ReqTunnelMsg } from "../message/types";
-
-// The message itself might contain this delimiter and mess up the message
-// This a loop hole and potential cause of failure in the protocol
-// Ideally this should be escaped using back slash or something
-const DELIMITER = "|__|";
 
 type ControllChannelEvents = {
   ctrlMsg: [ctrlMsg: ControllMsg];
@@ -48,7 +44,7 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   private processBuffer() {
-    const fragments = this.buffer.split(DELIMITER);
+    const fragments = bufferUtils.smartSplitData(this.buffer);
 
     while (fragments.length > 1) {
       const msgString = fragments.shift()!;
@@ -86,7 +82,9 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   public sendCtrlMsg<T = string>(ctrlMsg: ControllMsg<T>) {
-    this.socket.write(marshall(ctrlMsg) + DELIMITER);
+    const marshalledData = marshall(ctrlMsg);
+    const processedData = bufferUtils.smartProcessData(marshalledData);
+    this.socket.write(processedData);
   }
 
   public sendStartMsg(requestId: string) {

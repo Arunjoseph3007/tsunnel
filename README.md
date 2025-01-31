@@ -11,10 +11,10 @@ A local tunnel written in Typescript
 
 - [x] ~~Similar Tunnel for HTTP protocol~~
 - [x] ~~A clean and accesible CLI~~
-- [ ] Nice logging for served requests
-- [ ] Smarter Delimiting & Escaping for control channel
+- [x] ~~Nice logging for served requests~~
+- [x] Smarter Delimiting & Escaping for control channel
 - [ ] In control channel instead of storing in string use `Buffers`
 - [ ] Better logging using pino and pino-pretty
-- [ ] TCP: allow/deny cidr ranges
-- [ ] HTTP: basic auth
-- [ ] HTTP: custom headers
+- [x] ~~TCP/HTTP: allow/deny cidr ranges~~
+- [x] ~~HTTP: basic auth~~
+- [x] ~~HTTP: custom headers~~
