@@ -33,7 +33,7 @@ export default class HTTPTunnel {
   public handleRequest(req: http.IncomingMessage, res: HTTPServerResponse) {
     for (const middleware of this.middlewares) {
       const canContinue = middleware.handle(req, res);
-      if (canContinue) {
+      if (!canContinue) {
         return;
       }
     }
