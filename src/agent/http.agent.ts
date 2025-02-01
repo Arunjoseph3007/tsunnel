@@ -52,6 +52,8 @@ export default class HTTPAgent {
         method: metaData.method,
         path: metaData.url,
       });
+      
+      this.writeLog("Request received", requestId, metaData.url);
 
       conn.on("response", (res) => {
         this.ctrlChannel.sendMetaDataMsg(requestId, marshallRespHeaders(res));
@@ -90,7 +92,6 @@ export default class HTTPAgent {
       if (!conn) return;
 
       conn.end();
-      this.writeLog("Request received", requestId);
     });
 
     this.ctrlChannel.on("connData", (requestId, data) => {
