@@ -1,5 +1,9 @@
 import { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "http";
-import { HTTPAgentOptions, TCPAgentOptions } from "../agent/types";
+import {
+  FileAgentOptions,
+  HTTPAgentOptions,
+  TCPAgentOptions,
+} from "../agent/types";
 
 export enum MsgType {
   Start = "Start", // Marks start of a request
@@ -17,7 +21,10 @@ export type ControllMsg<T = string> = {
   data?: T;
 };
 
-export type ReqTunnelMsg = TCPAgentOptions | HTTPAgentOptions;
+export type ReqTunnelMsg =
+  | TCPAgentOptions
+  | HTTPAgentOptions
+  | FileAgentOptions;
 
 export type HTTPReqMetadata = {
   url: string;

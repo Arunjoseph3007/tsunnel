@@ -23,3 +23,9 @@ export type HTTPTunnelOptions = Omit<
   HTTPAgentOptions,
   "localPort" | "localHost"
 >;
+
+export type FileAgentOptions = {
+  directory: string;
+  allow?: string[];
+  deny?: string[];
+};

@@ -13,8 +13,21 @@ A local tunnel written in Typescript
 - [x] ~~A clean and accesible CLI~~
 - [x] ~~Nice logging for served requests~~
 - [x] Smarter Delimiting & Escaping for control channel
-- [ ] In control channel instead of storing in string use `Buffers`
+- [ ] In control channel instead of storing in string use `Buffers`. I think this should be done. It is causing some error
 - [ ] Better logging using pino and pino-pretty
 - [x] ~~TCP/HTTP: allow/deny cidr ranges~~
 - [x] ~~HTTP: basic auth~~
 - [x] ~~HTTP: custom headers~~
+- [ ] Add time out to client to prevent attacks
+- [ ] Add some tests please.
+
+
+## File server issues to deal with
+
+- [x] Can access routes outside using `../..`. This doesnt seem to be an issue
+- [x] ~~Can only serve one directory~~
+- [ ] Error on `/dist/agent/index.js`
+- [ ] Error on images
+- [x] ~~Content-type/length headers~~
+- [ ] Fix `favicon.ico` failure
+- [x] Make available through apply command
