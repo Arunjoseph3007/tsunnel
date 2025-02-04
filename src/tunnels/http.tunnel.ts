@@ -44,7 +44,7 @@ export default class HTTPTunnel {
     this.ctrlChannel.sendMetaDataMsg(requestId, marshallReqHeaders(req));
 
     req.on("data", (ch) => {
-      this.ctrlChannel.sendDataMsg(requestId, ch.toString());
+      this.ctrlChannel.sendDataMsg(requestId, Buffer.from(ch));
     });
 
     req.on("end", () => {

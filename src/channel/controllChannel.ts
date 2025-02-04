@@ -104,8 +104,12 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
     this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
   }
 
-  public sendMetaDataMsg(requestId: string, data: any) {
-    this.sendCtrlMsg({ requestId, data, type: MsgType.Metadata });
+  public sendMetaDataMsg(requestId: string, data: string) {
+    this.sendCtrlMsg({
+      requestId,
+      data: Buffer.from(data),
+      type: MsgType.Metadata,
+    });
   }
 
   public sendErrorMsg(requestId: string, data: string) {

@@ -52,14 +52,14 @@ export default class HTTPAgent {
         method: metaData.method,
         path: metaData.url,
       });
-      
+
       this.writeLog("Request received", requestId, metaData.url);
 
       conn.on("response", (res) => {
         this.ctrlChannel.sendMetaDataMsg(requestId, marshallRespHeaders(res));
 
-        res.on("data", (ch) => {
-          this.ctrlChannel.sendDataMsg(requestId, ch.toString());
+        res.on("data", (ch: string) => {
+          this.ctrlChannel.sendDataMsg(requestId, Buffer.from(ch));
         });
 
         res.on("error", (er) => {
