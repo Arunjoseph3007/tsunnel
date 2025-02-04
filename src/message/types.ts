@@ -6,19 +6,19 @@ import {
 } from "../agent/types";
 
 export enum MsgType {
-  Start = "Start", // Marks start of a request
-  Data = "Data", // for data transfer
-  End = "End", // Marks end of a request
-  Metadata = "Metadata", // For sending headers
-  Error = "Error", // Unhandled error
-  ReqTunnel = "ReqTunnel", // For requesting tunnel
-  TunnelGranted = "TunnelGranted", // For granting tunnel
+  Start = 100, // Marks start of a request
+  Data = 101, // for data transfer
+  End = 102, // Marks end of a request
+  Metadata = 103, // For sending headers
+  Error = 104, // Unhandled error
+  ReqTunnel = 105, // For requesting tunnel
+  TunnelGranted = 106, // For granting tunnel
 }
 
-export type ControllMsg<T = string> = {
+export type ControllMsg = {
   type: MsgType;
   requestId: string;
-  data?: T;
+  data: Buffer<ArrayBufferLike>;
 };
 
 export type ReqTunnelMsg =
@@ -41,6 +41,7 @@ export const makeStartMsg = (requestId: string): ControllMsg => {
   return {
     type: MsgType.Start,
     requestId,
+    data: Buffer.alloc(0),
   };
 };
 
@@ -48,6 +49,7 @@ export const makeEndMsg = (requestId: string): ControllMsg => {
   return {
     type: MsgType.End,
     requestId,
+    data: Buffer.alloc(0),
   };
 };
 
@@ -58,7 +60,7 @@ export const makeDataMsg = (
   return {
     type: MsgType.Data,
     requestId,
-    data: data.toString(),
+    data: data,
   };
 };
 
@@ -69,7 +71,7 @@ export const makeMetaDataMsg = (
   return {
     requestId,
     type: MsgType.Metadata,
-    data: data.toString(),
+    data: data,
   };
 };
 
