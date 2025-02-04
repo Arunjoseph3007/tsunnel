@@ -58,8 +58,8 @@ export default class HTTPAgent {
       conn.on("response", (res) => {
         this.ctrlChannel.sendMetaDataMsg(requestId, marshallRespHeaders(res));
 
-        res.on("data", (ch: string) => {
-          this.ctrlChannel.sendDataMsg(requestId, Buffer.from(ch));
+        res.on("data", (ch: Buffer) => {
+          this.ctrlChannel.sendDataMsg(requestId, ch);
         });
 
         res.on("error", (er) => {
