@@ -113,8 +113,9 @@ ${data
         this.ctrlChannel.sendEndMsg(requestId);
       });
 
-      fileHandle.on("data", (ch: Buffer) => {
-        this.ctrlChannel.sendDataMsg(requestId, ch);
+      fileHandle.on("data", (ch) => {
+        const chBuff = typeof ch == "string" ? Buffer.from(ch) : ch;
+        this.ctrlChannel.sendDataMsg(requestId, chBuff);
       });
     });
 
