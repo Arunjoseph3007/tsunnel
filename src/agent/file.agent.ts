@@ -85,7 +85,7 @@ ${data
       if (fileStats.isDirectory()) {
         const data = fs.readdirSync(filePath);
         const html = this.directoryIndexHTML(metaData.url, data);
-        this.ctrlChannel.sendDataMsg(requestId, html);
+        this.ctrlChannel.sendDataMsg(requestId, Buffer.from(html));
         this.ctrlChannel.sendEndMsg(requestId);
         return;
       }
@@ -93,13 +93,16 @@ ${data
       const fileHandle = fs.createReadStream(filePath);
       const contentType = getContentType(filePath);
 
-      this.ctrlChannel.sendMetaDataMsg(requestId, {
-        statusCode: 200,
-        headers: {
-          "content-type": contentType,
-          "content-length": fileStats.size,
-        },
-      });
+      this.ctrlChannel.sendMetaDataMsg(
+        requestId,
+        JSON.stringify({
+          statusCode: 200,
+          headers: {
+            "content-type": contentType,
+            "content-length": fileStats.size,
+          },
+        })
+      );
 
       fileHandle.on("end", () => {
         this.ctrlChannel.sendEndMsg(requestId);
@@ -111,7 +114,8 @@ ${data
       });
 
       fileHandle.on("data", (ch) => {
-        this.ctrlChannel.sendDataMsg(requestId, ch.toString());
+        const chBuff = typeof ch == "string" ? Buffer.from(ch) : ch;
+        this.ctrlChannel.sendDataMsg(requestId, chBuff);
       });
     });
 

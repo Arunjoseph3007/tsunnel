@@ -54,7 +54,7 @@ export default class TCPAgent {
       const conn = net.createConnection(this.localPort, this.localHost);
 
       conn.on("data", (ch) => {
-        this.ctrlChannel.sendDataMsg(requestId, ch.toString());
+        this.ctrlChannel.sendDataMsg(requestId, ch);
       });
 
       conn.on("end", () => {

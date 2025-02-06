@@ -82,7 +82,7 @@ export default class TCPTunnel {
     this.ctrlChannel.sendStartMsg(requestId);
 
     client.on("data", (ch) => {
-      this.ctrlChannel.sendDataMsg(requestId, ch.toString());
+      this.ctrlChannel.sendDataMsg(requestId, ch);
     });
 
     client.on("end", () => {

@@ -1,42 +1,45 @@
-const DELIMITER = "|";
-const ESCAPE_CHAR = "~";
+const DELIMITER = 0;
+const delimiterAsBuf = Uint8Array.from([DELIMITER]);
+const ESCAPE_CHAR = 1;
+const escapeAsBuf = Uint8Array.from([ESCAPE_CHAR]);
 
 export const smartProcessData = (
-  data: string,
-  delimiter: string = DELIMITER,
-  escape: string = ESCAPE_CHAR
-): string => {
-  let output = "";
+  data: Buffer<ArrayBufferLike>,
+  delimiter: number = DELIMITER,
+  escape: number = ESCAPE_CHAR
+): Buffer<ArrayBufferLike> => {
+  let output = Buffer.from([]);
 
   for (const char of data) {
     if (char == delimiter || char == escape) {
-      output += escape;
+      output = Buffer.concat([output, escapeAsBuf]);
     }
-    output += char;
+    output = Buffer.concat([output, Uint8Array.from([char])]);
   }
-  return output + delimiter;
+  output = Buffer.concat([output, delimiterAsBuf]);
+  return output;
 };
 
 export const smartSplitData = (
-  data: string,
-  delimiter: string = DELIMITER,
-  escape: string = ESCAPE_CHAR
-): string[] => {
-  const output: string[] = [];
-  let segment = "";
+  data: Buffer<ArrayBufferLike>,
+  delimiter: number = DELIMITER,
+  escape: number = ESCAPE_CHAR
+): Array<Buffer<ArrayBufferLike>> => {
+  let output: Buffer<ArrayBufferLike>[] = [];
+  let segment = Buffer.from([]);
   let escaping = false;
 
   for (const char of data) {
     if (escaping) {
-      segment += char;
+      segment = Buffer.concat([segment, Uint8Array.from([char])]);
       escaping = false;
     } else if (char == escape) {
       escaping = true;
     } else if (char == delimiter) {
       output.push(segment);
-      segment = "";
+      segment = Buffer.from([]);
     } else {
-      segment += char;
+      segment = Buffer.concat([segment, Uint8Array.from([char])]);
     }
   }
 
