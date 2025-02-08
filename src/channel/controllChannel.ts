@@ -5,8 +5,11 @@ import {
   ControllMsg,
   makeDataMsg,
   makeEndMsg,
+  makeErrorMsg,
   makeMetaDataMsg,
+  makeReqTunnelMsg,
   makeStartMsg,
+  makeTunnelGrantMsg,
   MsgType,
   ReqTunnelMsg,
 } from "../message/types";
@@ -115,36 +118,15 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
     this.sendCtrlMsg(makeMetaDataMsg(requestId, Buffer.from(data)));
   }
 
-  // TODO: make helper methods for making Error, ReqTunnel, GrantTunnel, packets
-  public sendErrorMsg(requestId: string, data: string) {
-    this.sendCtrlMsg({
-      type: MsgType.Error,
-      requestId,
-      data: Buffer.from(data),
-      length: 12 + data.length,
-      version: 1,
-    });
+  public sendErrorMsg(requestId: string, errMsg: string) {
+    this.sendCtrlMsg(makeErrorMsg(requestId, errMsg));
   }
 
   public sendTunnelReqMsg(data: ReqTunnelMsg) {
-    const dataString = JSON.stringify(data);
-    this.sendCtrlMsg({
-      requestId: "",
-      data: Buffer.from(dataString),
-      type: MsgType.ReqTunnel,
-      length: 12 + dataString.length,
-      version: 1,
-    });
+    this.sendCtrlMsg(makeReqTunnelMsg(data));
   }
 
   public sendGrantTunnelMsg(data: ReqTunnelMsg, uri: string) {
-    const dataString = JSON.stringify({ ...data, uri });
-    this.sendCtrlMsg({
-      requestId: "",
-      data: Buffer.from(dataString),
-      type: MsgType.TunnelGranted,
-      length: 12 + dataString.length,
-      version: 1,
-    });
+    this.sendCtrlMsg(makeTunnelGrantMsg(data, uri));
   }
 }

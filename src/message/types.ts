@@ -86,6 +86,45 @@ export const makeMetaDataMsg = (
   };
 };
 
+export const makeErrorMsg = (
+  requestId: string,
+  errMsg: string
+): ControllMsg => {
+  return {
+    version: 1,
+    requestId,
+    type: MsgType.Error,
+    data: Buffer.from(errMsg),
+    length: HeaderLength + errMsg.length,
+  };
+};
+
+export const makeReqTunnelMsg = (data: ReqTunnelMsg): ControllMsg => {
+  const dataString = JSON.stringify(data);
+  return {
+    version: 1,
+    requestId: "",
+    length: HeaderLength + dataString.length,
+    type: MsgType.ReqTunnel,
+    data: Buffer.from(dataString),
+  };
+};
+
+export const makeTunnelGrantMsg = (
+  data: ReqTunnelMsg,
+  uri: string
+): ControllMsg => {
+  const dataString = JSON.stringify({ ...data, uri });
+
+  return {
+    version: 1,
+    requestId: "",
+    length: HeaderLength + dataString.length,
+    type: MsgType.TunnelGranted,
+    data: Buffer.from(dataString),
+  };
+};
+
 export type HTTPServerResponse = ServerResponse<IncomingMessage> & {
   req: IncomingMessage;
 };
