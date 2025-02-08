@@ -7,6 +7,7 @@
     "build-server": "esbuild src/server/index.ts --bundle --platform=node --outfile=dist/server.index.js",
     "build-agent": "esbuild src/agent/index.ts --bundle --platform=node --outfile=dist/agent.index.js",
     "build-mock": "esbuild src/mock/index.ts --bundle --platform=node --outfile=dist/mock.index.js",
+    "watch": "node scripts/watch.js",
     "build": "node esbuild.js",
     "server": "node dist/server/index.js",
     "agent": "node dist/agent/index.js",
