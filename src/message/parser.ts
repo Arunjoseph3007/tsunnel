@@ -21,9 +21,9 @@ export const unmarshall = (buff: Buffer<ArrayBufferLike>): ControllMsg => {
 export const marshall = (ctrlMsg: ControllMsg): Buffer<ArrayBufferLike> => {
   const buff = Buffer.allocUnsafe(ctrlMsg.length);
 
-  buff.writeInt8(ctrlMsg.version, 0);
-  buff.writeInt8(ctrlMsg.type, 1);
-  buff.writeInt16BE(ctrlMsg.length, 2);
+  buff.writeUInt8(ctrlMsg.version, 0);
+  buff.writeUInt8(ctrlMsg.type, 1);
+  buff.writeUInt16BE(ctrlMsg.length, 2);
   buff.write(ctrlMsg.requestId, 4);
 
   ctrlMsg.data.copy(buff, 12);

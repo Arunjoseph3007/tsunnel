@@ -90,7 +90,10 @@ ${data
         return;
       }
 
-      const fileHandle = fs.createReadStream(filePath);
+      // TODO: dont hardcode numbers
+      const fileHandle = fs.createReadStream(filePath, {
+        highWaterMark: 65536 - 20,
+      });
       const contentType = getContentType(filePath);
 
       this.ctrlChannel.sendMetaDataMsg(
@@ -114,8 +117,8 @@ ${data
       });
 
       fileHandle.on("data", (ch) => {
-        const chBuff = typeof ch == "string" ? Buffer.from(ch) : ch;
-        this.ctrlChannel.sendDataMsg(requestId, chBuff);
+        // NOTE: this casting is fine
+        this.ctrlChannel.sendDataMsg(requestId, ch as Buffer);
       });
     });
 
