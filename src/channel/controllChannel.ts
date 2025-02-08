@@ -1,8 +1,18 @@
 import * as net from "net";
-import * as bufferUtils from "./buffer";
+import MessageBuffer from "./buffer";
 import { EventEmitter } from "events";
-import { marshall, unmarshall } from "../message/parser";
-import { ControllMsg, MsgType, ReqTunnelMsg } from "../message/types";
+import {
+  ControllMsg,
+  makeDataMsg,
+  makeEndMsg,
+  makeErrorMsg,
+  makeMetaDataMsg,
+  makeReqTunnelMsg,
+  makeStartMsg,
+  makeTunnelGrantMsg,
+  MsgType,
+  ReqTunnelMsg,
+} from "../message/types";
 
 type ControllChannelEvents = {
   ctrlMsg: [ctrlMsg: ControllMsg];
@@ -22,17 +32,17 @@ type ControllChannelEvents = {
  * When a complete message is recieved it emits `ctrlMsg` with the message recieved
  */
 export default class ControllChannel extends EventEmitter<ControllChannelEvents> {
-  buffer: Buffer;
-  socket: net.Socket;
+  private buffer: MessageBuffer;
+  private socket: net.Socket;
 
   constructor(socket: net.Socket) {
     super();
 
-    this.buffer = Buffer.alloc(0);
+    this.buffer = new MessageBuffer();
     this.socket = socket;
 
     this.socket.on("data", (ch) => {
-      this.buffer = Buffer.concat([this.buffer, ch]);
+      this.buffer.append(ch);
       this.processBuffer();
     });
   }
@@ -44,12 +54,9 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   private processBuffer() {
-    const fragments = bufferUtils.smartSplitData(this.buffer);
+    const messages = this.buffer.extractFramedMessages();
 
-    while (fragments.length > 1) {
-      const msgString = fragments.shift()!;
-      const ctrlMsg = unmarshall(msgString);
-
+    for (const ctrlMsg of messages) {
       this.emit("ctrlMsg", ctrlMsg);
 
       if (ctrlMsg.type == MsgType.Start) {
@@ -82,59 +89,44 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
         this.emit("tunnelGranted", tunnelGrantedMsg, tunnelGrantedMsg.uri);
       }
     }
-
-    this.buffer = fragments[0];
   }
 
-  public sendCtrlMsg(ctrlMsg: ControllMsg) {
-    const marshalledData = marshall(ctrlMsg);
-    const processedData = bufferUtils.smartProcessData(marshalledData);
-    this.socket.write(processedData);
+  private sendCtrlMsg(ctrlMsg: ControllMsg) {
+    if (ctrlMsg.length > 65536) {
+      throw new RangeError(
+        `Pakcet length is ${ctrlMsg.length}. We can only hanlde upto 65536`
+      );
+    }
+
+    const msgPacket = MessageBuffer.marshall(ctrlMsg);
+    this.socket.write(msgPacket);
   }
 
   public sendStartMsg(requestId: string) {
-    this.sendCtrlMsg({ requestId, type: MsgType.Start, data: Buffer.alloc(0) });
+    this.sendCtrlMsg(makeStartMsg(requestId));
   }
 
   public sendEndMsg(requestId: string) {
-    this.sendCtrlMsg({ requestId, type: MsgType.End, data: Buffer.alloc(0) });
+    this.sendCtrlMsg(makeEndMsg(requestId));
   }
 
   public sendDataMsg(requestId: string, data: Buffer<ArrayBufferLike>) {
-    this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
+    this.sendCtrlMsg(makeDataMsg(requestId, data));
   }
 
   public sendMetaDataMsg(requestId: string, data: string) {
-    this.sendCtrlMsg({
-      requestId,
-      data: Buffer.from(data),
-      type: MsgType.Metadata,
-    });
+    this.sendCtrlMsg(makeMetaDataMsg(requestId, Buffer.from(data)));
   }
 
-  public sendErrorMsg(requestId: string, data: string) {
-    this.sendCtrlMsg({
-      type: MsgType.Error,
-      requestId,
-      data: Buffer.from(data),
-    });
+  public sendErrorMsg(requestId: string, errMsg: string) {
+    this.sendCtrlMsg(makeErrorMsg(requestId, errMsg));
   }
 
   public sendTunnelReqMsg(data: ReqTunnelMsg) {
-    const dataString = JSON.stringify(data);
-    this.sendCtrlMsg({
-      requestId: "",
-      data: Buffer.from(dataString),
-      type: MsgType.ReqTunnel,
-    });
+    this.sendCtrlMsg(makeReqTunnelMsg(data));
   }
 
   public sendGrantTunnelMsg(data: ReqTunnelMsg, uri: string) {
-    const dataString = JSON.stringify({ ...data, uri });
-    this.sendCtrlMsg({
-      requestId: "",
-      data: Buffer.from(dataString),
-      type: MsgType.TunnelGranted,
-    });
+    this.sendCtrlMsg(makeTunnelGrantMsg(data, uri));
   }
 }

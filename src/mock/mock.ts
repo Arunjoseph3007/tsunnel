@@ -5,6 +5,7 @@ import {
   RequestListener,
   ServerResponse,
 } from "http";
+import { colorOut } from "../utils/color";
 
 const handlers: Record<
   string,
@@ -93,6 +94,23 @@ const handlers: Record<
 
 export default function createMockServer() {
   const server = createServer((req, res) => {
+    console.log(
+      colorOut("[MOCK]", "Green"),
+      "<-",
+      colorOut(req.method!, "Yellow"),
+      req.url
+    );
+
+    res.on("close", () => {
+      console.log(
+        colorOut("[MOCK]", "Red"),
+        "->",
+        colorOut(req.method!, "Yellow"),
+        res.statusCode,
+        req.url
+      );
+    });
+
     let url = req.url || "/echo";
     url = url.slice(1);
     if (!(url in handlers)) {

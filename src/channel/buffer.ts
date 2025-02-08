@@ -1,49 +1,70 @@
-const DELIMITER = 0;
-const delimiterAsBuf = Uint8Array.from([DELIMITER]);
-const ESCAPE_CHAR = 1;
-const escapeAsBuf = Uint8Array.from([ESCAPE_CHAR]);
+import { ControllMsg, MsgType } from "../message/types";
 
-export const smartProcessData = (
-  data: Buffer<ArrayBufferLike>,
-  delimiter: number = DELIMITER,
-  escape: number = ESCAPE_CHAR
-): Buffer<ArrayBufferLike> => {
-  let output = Buffer.from([]);
+export const HeaderLength = 12; // 1+1+2+8
 
-  for (const char of data) {
-    if (char == delimiter || char == escape) {
-      output = Buffer.concat([output, escapeAsBuf]);
-    }
-    output = Buffer.concat([output, Uint8Array.from([char])]);
-  }
-  output = Buffer.concat([output, delimiterAsBuf]);
-  return output;
-};
+// TODO: instead of reassign on every update, can we do this with one large buffer and length property
+/*
+Packet
+___________________________________________________________
+| 1 Byte version | 1 Bytes MsgType | 2 Byte packet length |
+| 8 Bytes Request ID ......... | Data in binary.......... |
+|_________________________________________________________|
+*/
+export default class MessageBuffer {
+  private buffer: Buffer;
 
-export const smartSplitData = (
-  data: Buffer<ArrayBufferLike>,
-  delimiter: number = DELIMITER,
-  escape: number = ESCAPE_CHAR
-): Array<Buffer<ArrayBufferLike>> => {
-  let output: Buffer<ArrayBufferLike>[] = [];
-  let segment = Buffer.from([]);
-  let escaping = false;
-
-  for (const char of data) {
-    if (escaping) {
-      segment = Buffer.concat([segment, Uint8Array.from([char])]);
-      escaping = false;
-    } else if (char == escape) {
-      escaping = true;
-    } else if (char == delimiter) {
-      output.push(segment);
-      segment = Buffer.from([]);
-    } else {
-      segment = Buffer.concat([segment, Uint8Array.from([char])]);
-    }
+  constructor() {
+    this.buffer = Buffer.allocUnsafe(0);
   }
 
-  output.push(segment);
+  static marshall(ctrlMsg: ControllMsg): Buffer<ArrayBufferLike> {
+    const buff = Buffer.allocUnsafe(ctrlMsg.length);
 
-  return output;
-};
+    buff.writeUInt8(ctrlMsg.version, 0);
+    buff.writeUInt8(ctrlMsg.type, 1);
+    buff.writeUInt16BE(ctrlMsg.length, 2);
+    buff.write(ctrlMsg.requestId, 4);
+
+    ctrlMsg.data.copy(buff, 12);
+
+    return buff;
+  }
+
+  public append(data: Buffer<ArrayBufferLike>) {
+    this.buffer = Buffer.concat([this.buffer, data]);
+  }
+
+  public extractFramedMessages(): ControllMsg[] {
+    let output: ControllMsg[] = [];
+
+    while (this.buffer.length >= HeaderLength) {
+      const version = this.buffer.readUInt8(0);
+      const msgType = this.buffer.readUInt8(1) as MsgType;
+      const packetLength = this.buffer.readUInt16BE(2);
+      const requestId = this.buffer.subarray(4, 4 + 8).toString();
+
+      // Unkonw version
+      if (version != 1) {
+        throw new Error(`Unknown protocol version ${version}. Expected 1`);
+      }
+
+      // Message not fully received. Will be processed next time
+      if (this.buffer.length < packetLength) {
+        break;
+      }
+
+      const msgDataBuf = this.buffer.subarray(HeaderLength, packetLength);
+      const extractedMsg: ControllMsg = {
+        requestId,
+        version,
+        data: msgDataBuf,
+        length: packetLength,
+        type: msgType,
+      };
+      output.push(extractedMsg);
+      this.buffer = this.buffer.subarray(packetLength);
+    }
+
+    return output;
+  }
+}
