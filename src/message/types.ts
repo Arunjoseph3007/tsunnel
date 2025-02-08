@@ -4,6 +4,7 @@ import {
   HTTPAgentOptions,
   TCPAgentOptions,
 } from "../agent/types";
+import { HeaderLength } from "../channel/buffer";
 
 export enum MsgType {
   Start = 100, // Marks start of a request
@@ -45,7 +46,7 @@ export const makeStartMsg = (requestId: string): ControllMsg => {
     type: MsgType.Start,
     requestId,
     data: Buffer.alloc(0),
-    length: 12,
+    length: HeaderLength,
   };
 };
 
@@ -55,7 +56,7 @@ export const makeEndMsg = (requestId: string): ControllMsg => {
     type: MsgType.End,
     requestId,
     data: Buffer.alloc(0),
-    length: 12,
+    length: HeaderLength,
   };
 };
 
@@ -68,7 +69,7 @@ export const makeDataMsg = (
     type: MsgType.Data,
     requestId,
     data: data,
-    length: data.length + 12,
+    length: data.length + HeaderLength,
   };
 };
 
@@ -81,7 +82,7 @@ export const makeMetaDataMsg = (
     requestId,
     type: MsgType.Metadata,
     data: data,
-    length: data.length + 12,
+    length: data.length + HeaderLength,
   };
 };
 
