@@ -34,6 +34,7 @@ const comipleAndRun = async () => {
       "--watch",
       "--no-warnings",
       outFile,
+      ...process.argv.slice(3),
     ]);
 
     process.stdin.pipe(childProcc.stdin);

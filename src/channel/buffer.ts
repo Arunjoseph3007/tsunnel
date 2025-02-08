@@ -1,49 +1,48 @@
-const DELIMITER = 0;
-const delimiterAsBuf = Uint8Array.from([DELIMITER]);
-const ESCAPE_CHAR = 1;
-const escapeAsBuf = Uint8Array.from([ESCAPE_CHAR]);
+import { ControllMsg, MsgType } from "../message/types";
 
 export const smartProcessData = (
-  data: Buffer<ArrayBufferLike>,
-  delimiter: number = DELIMITER,
-  escape: number = ESCAPE_CHAR
+  data: Buffer<ArrayBufferLike>
 ): Buffer<ArrayBufferLike> => {
-  let output = Buffer.from([]);
-
-  for (const char of data) {
-    if (char == delimiter || char == escape) {
-      output = Buffer.concat([output, escapeAsBuf]);
-    }
-    output = Buffer.concat([output, Uint8Array.from([char])]);
-  }
-  output = Buffer.concat([output, delimiterAsBuf]);
-  return output;
+  return data;
 };
 
-export const smartSplitData = (
-  data: Buffer<ArrayBufferLike>,
-  delimiter: number = DELIMITER,
-  escape: number = ESCAPE_CHAR
-): Array<Buffer<ArrayBufferLike>> => {
-  let output: Buffer<ArrayBufferLike>[] = [];
-  let segment = Buffer.from([]);
-  let escaping = false;
+/*
+Packet
+___________________________________________________________
+| 1 Byte version | 1 Bytes MsgType | 2 Byte packet length |
+| 8 Bytes Request ID ......... | Data in binary.......... |
+___________________________________________________________ 
+*/
 
-  for (const char of data) {
-    if (escaping) {
-      segment = Buffer.concat([segment, Uint8Array.from([char])]);
-      escaping = false;
-    } else if (char == escape) {
-      escaping = true;
-    } else if (char == delimiter) {
-      output.push(segment);
-      segment = Buffer.from([]);
-    } else {
-      segment = Buffer.concat([segment, Uint8Array.from([char])]);
+const HeaderLength = 12; // 1+1+2+8
+
+export const smartSplitData = (
+  data: Buffer<ArrayBufferLike>
+): Buffer<ArrayBufferLike>[] => {
+  let output: Buffer<ArrayBufferLike>[] = [];
+
+  while (data.length >= HeaderLength) {
+    const version = data.readUInt8(0);
+    const msgType = data.readUInt8(1) as MsgType;
+    const packetLength = data.readUInt16BE(2);
+    const requesId = data.subarray(4, 4 + 8).toString();
+
+    // Unkonw version
+    if (version != 1) {
+      throw new Error(`Unknown protocol version ${version}. Expected 1`);
     }
+
+    // Message not fully received. Will be processed next time
+    if (data.length < packetLength) {
+      break;
+    }
+
+    const msgDataBuf = data.subarray(0, packetLength);
+    data = data.subarray(packetLength);
+    output.push(msgDataBuf);
   }
 
-  output.push(segment);
+  output.push(data);
 
   return output;
 };

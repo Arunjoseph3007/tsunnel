@@ -16,7 +16,9 @@ export enum MsgType {
 }
 
 export type ControllMsg = {
+  version: number;
   type: MsgType;
+  length: number;
   requestId: string;
   data: Buffer<ArrayBufferLike>;
 };
@@ -39,17 +41,21 @@ export type HTTPResMetadata = {
 
 export const makeStartMsg = (requestId: string): ControllMsg => {
   return {
+    version: 1,
     type: MsgType.Start,
     requestId,
     data: Buffer.alloc(0),
+    length: 12,
   };
 };
 
 export const makeEndMsg = (requestId: string): ControllMsg => {
   return {
+    version: 1,
     type: MsgType.End,
     requestId,
     data: Buffer.alloc(0),
+    length: 12,
   };
 };
 
@@ -58,9 +64,11 @@ export const makeDataMsg = (
   data: Buffer<ArrayBufferLike>
 ): ControllMsg => {
   return {
+    version: 1,
     type: MsgType.Data,
     requestId,
     data: data,
+    length: data.length + 12,
   };
 };
 
@@ -69,9 +77,11 @@ export const makeMetaDataMsg = (
   data: Buffer<ArrayBufferLike>
 ): ControllMsg => {
   return {
+    version: 1,
     requestId,
     type: MsgType.Metadata,
     data: data,
+    length: data.length + 12,
   };
 };
 

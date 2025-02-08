@@ -2,7 +2,15 @@ import * as net from "net";
 import * as bufferUtils from "./buffer";
 import { EventEmitter } from "events";
 import { marshall, unmarshall } from "../message/parser";
-import { ControllMsg, MsgType, ReqTunnelMsg } from "../message/types";
+import {
+  ControllMsg,
+  makeDataMsg,
+  makeEndMsg,
+  makeMetaDataMsg,
+  makeStartMsg,
+  MsgType,
+  ReqTunnelMsg,
+} from "../message/types";
 
 type ControllChannelEvents = {
   ctrlMsg: [ctrlMsg: ControllMsg];
@@ -93,30 +101,29 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   public sendStartMsg(requestId: string) {
-    this.sendCtrlMsg({ requestId, type: MsgType.Start, data: Buffer.alloc(0) });
+    this.sendCtrlMsg(makeStartMsg(requestId));
   }
 
   public sendEndMsg(requestId: string) {
-    this.sendCtrlMsg({ requestId, type: MsgType.End, data: Buffer.alloc(0) });
+    this.sendCtrlMsg(makeEndMsg(requestId));
   }
 
   public sendDataMsg(requestId: string, data: Buffer<ArrayBufferLike>) {
-    this.sendCtrlMsg({ requestId, data, type: MsgType.Data });
+    this.sendCtrlMsg(makeDataMsg(requestId, data));
   }
 
   public sendMetaDataMsg(requestId: string, data: string) {
-    this.sendCtrlMsg({
-      requestId,
-      data: Buffer.from(data),
-      type: MsgType.Metadata,
-    });
+    this.sendCtrlMsg(makeMetaDataMsg(requestId, Buffer.from(data)));
   }
 
+  // TODO: make helper methods for making Error, ReqTunnel, GrantTunnel, packets
   public sendErrorMsg(requestId: string, data: string) {
     this.sendCtrlMsg({
       type: MsgType.Error,
       requestId,
       data: Buffer.from(data),
+      length: 12 + data.length,
+      version: 1,
     });
   }
 
@@ -126,6 +133,8 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
       requestId: "",
       data: Buffer.from(dataString),
       type: MsgType.ReqTunnel,
+      length: 12 + dataString.length,
+      version: 1,
     });
   }
 
@@ -135,6 +144,8 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
       requestId: "",
       data: Buffer.from(dataString),
       type: MsgType.TunnelGranted,
+      length: 12 + dataString.length,
+      version: 1,
     });
   }
 }

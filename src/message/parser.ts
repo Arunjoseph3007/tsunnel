@@ -1,17 +1,32 @@
 import { ControllMsg, MsgType } from "./types";
 
 export const unmarshall = (buff: Buffer<ArrayBufferLike>): ControllMsg => {
-  const type = buff.at(0)! as MsgType;
-  const requestId = buff.subarray(1, 9).toString();
-  const data = buff.subarray(9);
-  return { data, requestId, type };
+  const version = buff.readUInt8(0);
+  const msgType = buff.readUInt8(1) as MsgType;
+  const packetLength = buff.readUInt16BE(2);
+  const requestId = buff.subarray(4, 4 + 8).toString();
+  const msgData = buff.subarray(4 + 8);
+
+  const ctrlMsg: ControllMsg = {
+    data: msgData,
+    requestId,
+    type: msgType,
+    length: packetLength,
+    version,
+  };
+
+  return ctrlMsg;
 };
 
 export const marshall = (ctrlMsg: ControllMsg): Buffer<ArrayBufferLike> => {
-  const typeBuf = Buffer.from([ctrlMsg.type]);
-  const requestIdBuf = Buffer.alloc(8);
-  if (ctrlMsg.requestId) {
-    Buffer.from(ctrlMsg.requestId).copy(requestIdBuf);
-  }
-  return Buffer.concat([typeBuf, requestIdBuf, ctrlMsg.data]);
+  const buff = Buffer.allocUnsafe(ctrlMsg.length);
+
+  buff.writeInt8(ctrlMsg.version, 0);
+  buff.writeInt8(ctrlMsg.type, 1);
+  buff.writeInt16BE(ctrlMsg.length, 2);
+  buff.write(ctrlMsg.requestId, 4);
+
+  ctrlMsg.data.copy(buff, 12);
+
+  return buff;
 };
