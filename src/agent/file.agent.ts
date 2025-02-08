@@ -91,6 +91,9 @@ ${data
       }
 
       // TODO: dont hardcode numbers
+      // IMP: Our packets can only have a max length of 65536 (as length is 2 bytes)
+      // `highWaterMark` controls max size of the chunks recieved in data events
+      // We need it to be below 65536-12 so the below line
       const fileHandle = fs.createReadStream(filePath, {
         highWaterMark: 65536 - 20,
       });

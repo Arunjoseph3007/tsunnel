@@ -95,6 +95,11 @@ export default class ControllChannel extends EventEmitter<ControllChannelEvents>
   }
 
   public sendCtrlMsg(ctrlMsg: ControllMsg) {
+    if (ctrlMsg.length > 65536) {
+      throw new RangeError(
+        `Pakcet length is ${ctrlMsg.length}. We can only hanlde upto 65536`
+      );
+    }
     const marshalledData = marshall(ctrlMsg);
     const processedData = bufferUtils.smartProcessData(marshalledData);
     this.socket.write(processedData);
