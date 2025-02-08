@@ -8,11 +8,11 @@
     "build-agent": "esbuild src/agent/index.ts --bundle --platform=node --outfile=dist/agent.index.js",
     "build-mock": "esbuild src/mock/index.ts --bundle --platform=node --outfile=dist/mock.index.js",
     "watch": "node scripts/watch.js",
-    "build": "node esbuild.js",
+    "build": "node scripts/esbuild.js",
     "server": "node dist/server/index.js",
     "agent": "node dist/agent/index.js",
     "mock": "node dist/mock/index.js",
-    "test": "node buildTest.js && node --test"
+    "test": "node scripts/buildTest.js && node --test"
   },
   "devDependencies": {
     "@types/ip": "^1.1.3",
