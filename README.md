@@ -2,6 +2,8 @@
 
 A local tunnel written in Typescript. Using tsunnel you can prove that "It works on My Machine".
 
+## [Usage](./docs/usage.md)
+
 ## Useful resources
 
 - [understanding tcp anf http](https://medium.com/@sesmiat/understanding-the-journey-of-http-requests-over-tcp-connections-39f32b1ca10d)
